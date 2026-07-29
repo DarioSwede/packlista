@@ -553,10 +553,52 @@ $("#sign-up").addEventListener("click", async () => {
     : data.session ? "" : "Kontot är skapat. Bekräfta adressen via mejlet du fått.";
 });
 
+function passkeyErrorMessage(error) {
+  if (error?.code === "webauthn_credential_not_found") {
+    return "YubiKeyn är inte registrerad för kontot. Logga in med e-post och välj Registrera YubiKey.";
+  }
+  if (error?.code === "passkey_disabled") {
+    return "Inloggning med säkerhetsnyckel är inte aktiverad.";
+  }
+  if (error?.name === "NotAllowedError") {
+    return "Registreringen avbröts eller YubiKeyn svarade inte. Sätt i nyckeln och försök igen.";
+  }
+  return error?.message || "Ett okänt fel inträffade.";
+}
+
 $("#passkey-sign-in").addEventListener("click", async () => {
   authMessage.textContent = "Väntar på din säkerhetsnyckel…";
   const { error } = await supabase.auth.signInWithPasskey();
-  authMessage.textContent = error ? `Kunde inte logga in: ${error.message}` : "";
+  authMessage.textContent = error ? `Kunde inte logga in: ${passkeyErrorMessage(error)}` : "";
+});
+
+async function refreshPasskeyStatus() {
+  const status = $("#passkey-status");
+  const button = $("#register-passkey");
+  const { data, error } = await supabase.auth.passkey.list();
+  if (error) {
+    status.textContent = "";
+    button.textContent = "Registrera YubiKey";
+    return;
+  }
+  const count = data?.length || 0;
+  status.textContent = count ? `Säkerhetsnyckel aktiv ✓` : "Ingen säkerhetsnyckel registrerad";
+  button.textContent = count ? "Lägg till säkerhetsnyckel" : "Registrera YubiKey";
+}
+
+$("#register-passkey").addEventListener("click", async () => {
+  const button = $("#register-passkey");
+  const status = $("#passkey-status");
+  button.disabled = true;
+  status.textContent = "Väntar på YubiKey…";
+  const { error } = await supabase.auth.registerPasskey();
+  button.disabled = false;
+  if (error) {
+    status.textContent = `Kunde inte registrera: ${passkeyErrorMessage(error)}`;
+    return;
+  }
+  status.textContent = "YubiKey registrerad ✓";
+  await refreshPasskeyStatus();
 });
 
 $("#sign-out").addEventListener("click", () => supabase.auth.signOut());
@@ -569,7 +611,9 @@ supabase.auth.onAuthStateChange((_event, session) => {
     closeModal();
     $("#account-email").textContent = session.user.email;
     createPlanner($("#private-planner"), { session });
+    refreshPasskeyStatus();
   } else {
     $("#private-planner").replaceChildren();
+    $("#passkey-status").textContent = "";
   }
 });

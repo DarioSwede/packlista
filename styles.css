@@ -13,6 +13,7 @@ button{cursor:pointer}
 [hidden]{display:none!important}
 .site-header,.app-header{width:min(1180px,calc(100% - 40px));height:76px;margin:auto;display:flex;align-items:center;justify-content:space-between}
 .app-header>div{display:flex;align-items:center;gap:16px;color:var(--muted);font-size:13px}
+.passkey-status{max-width:230px;color:var(--green);font-size:11px}
 .brand{color:var(--text);font-size:16px;font-weight:800;letter-spacing:.05em;text-decoration:none}
 .quiet-button,.secondary-button{border:1px solid var(--line);border-radius:9px;background:transparent;color:inherit;padding:9px 14px}
 .quiet-button:hover,.secondary-button:hover{border-color:var(--green);color:var(--green)}
