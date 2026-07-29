@@ -260,7 +260,9 @@ function createPlanner(container, { session = null } = {}) {
     row.insertCell().append(field("checkbox", item.owned, "Jag har prylen", (value) => item.owned = value));
     const consumable = field("checkbox", item.consumable, "Förbrukas", (value) => item.consumable = value);
     consumable.disabled = !CONSUMABLE_CATEGORIES.has(item.category);
-    consumable.title = consumable.disabled ? "Förbrukning kan användas för Mat, Vatten och Bränsle" : "";
+    consumable.title = consumable.disabled
+      ? "Förbrukning kan endast användas för Mat, Vatten och Bränsle."
+      : "Vikten räknas som förbrukning och minskar jämnt över turens valda antal dagar.";
     row.insertCell().append(consumable);
     row.insertCell().append(field("checkbox", item.worn, "Bärs på kroppen", (value) => item.worn = value));
     row.insertCell().append(field("checkbox", item.weighed, "Kontrollvägd", (value) => item.weighed = value));
@@ -370,7 +372,7 @@ function createPlanner(container, { session = null } = {}) {
     categories = mergedCategories(list.categories);
     listSettings = list.settings || {};
     tripDays = Math.max(1, Number(listSettings.tripDays) || 6);
-    $("[data-trip-days]", root).value = String(tripDays);
+    root.querySelectorAll("[data-trip-days]").forEach((input) => input.value = String(tripDays));
     $("[data-list-name]", root).value = list.name;
     filter = "alla";
     query = "";
@@ -452,11 +454,13 @@ function createPlanner(container, { session = null } = {}) {
     filter = filterSelect.value;
     render();
   });
-  $("[data-trip-days]", root).addEventListener("change", (event) => {
-    tripDays = Math.min(60, Math.max(1, Number(event.target.value) || 1));
-    event.target.value = String(tripDays);
-    scheduleSave();
-    render();
+  root.querySelectorAll("[data-trip-days]").forEach((input) => {
+    input.addEventListener("change", (event) => {
+      tripDays = Math.min(60, Math.max(1, Number(event.target.value) || 1));
+      root.querySelectorAll("[data-trip-days]").forEach((other) => other.value = String(tripDays));
+      scheduleSave();
+      render();
+    });
   });
   $("[data-clear-category]", root).addEventListener("click", () => {
     filter = "alla";
