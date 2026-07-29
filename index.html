@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#08140f">
   <meta name="description" content="Skapa en personlig packlista och håll koll på vikten inför nästa vandring.">
   <title>Packlista</title>
-  <link rel="stylesheet" href="styles.css?v=4">
+  <link rel="stylesheet" href="styles.css?v=5">
 </head>
 <body>
   <div id="signed-out">
@@ -84,7 +84,11 @@
       <aside class="planner-sidebar">
         <div>
           <p class="eyebrow">Packöversikt</p>
-          <h2 class="list-title">Min packlista</h2>
+          <input class="list-title" data-list-name value="Min packlista" aria-label="Packlistans namn">
+          <div class="list-switcher" data-list-switcher hidden>
+            <select data-list-select aria-label="Välj packlista"></select>
+            <button data-new-list aria-label="Skapa ny packlista">＋ Ny</button>
+          </div>
         </div>
         <nav class="planner-nav" aria-label="Packlistans vyer">
           <button class="active" data-view-button="packing">Packlista</button>
@@ -135,7 +139,7 @@
               <thead>
                 <tr>
                   <th>Artikel</th><th>Kategori</th><th>Vikt</th><th>Antal</th>
-                  <th>Har</th><th>Förbrukas</th><th>På mig</th><th></th>
+                  <th>Har</th><th>Förbrukas</th><th>På mig</th><th>Kontrollvägd</th><th></th>
                 </tr>
               </thead>
               <tbody data-items-body></tbody>
@@ -187,7 +191,7 @@
               </div>
             </header>
             <table class="print-table">
-              <thead><tr><th>✓</th><th>Artikel</th><th>Kategori</th><th>Vikt</th><th>Antal</th><th>På mig</th><th>Notering</th></tr></thead>
+              <thead><tr><th>✓</th><th>Artikel</th><th>Kategori</th><th>Vikt</th><th>Antal</th><th>På mig</th><th>Kontrollvägd</th><th>Notering</th></tr></thead>
               <tbody data-print-body></tbody>
             </table>
             <div class="print-empty" data-print-empty>Listan är tom.</div>
@@ -199,6 +203,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=4"></script>
+  <script type="module" src="app.js?v=5"></script>
 </body>
 </html>

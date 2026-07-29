@@ -4,16 +4,20 @@ const supabase = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANO
 });
 
 const DEFAULT_CATEGORIES = [
-  { id: "ryggsack", name: "Ryggsäck" },
-  { id: "bo", name: "Bo" },
-  { id: "sova", name: "Sova" },
-  { id: "mat", name: "Mat" },
-  { id: "kok", name: "Kök" },
-  { id: "klader", name: "Kläder" },
-  { id: "sakerhet", name: "Säkerhet" },
-  { id: "elektronik", name: "Elektronik" },
-  { id: "ovrigt", name: "Övrigt" },
+  { id: "ryggsack", name: "Ryggsäck", icon: "🎒" },
+  { id: "bo", name: "Bo", icon: "⛺" },
+  { id: "sova", name: "Sova", icon: "🛏️" },
+  { id: "mat", name: "Mat", icon: "🍲" },
+  { id: "vatten", name: "Vatten", icon: "💧" },
+  { id: "klader", name: "Kläder", icon: "🥾" },
+  { id: "kok", name: "Kök", icon: "🔥" },
+  { id: "elektronik", name: "Elektronik", icon: "🔋" },
+  { id: "kamera", name: "Kamera", icon: "📷" },
+  { id: "sakerhet", name: "Säkerhet", icon: "🩹" },
+  { id: "ovrigt", name: "Övrigt", icon: "📦" },
+  { id: "bransle", name: "Bränsle", icon: "⛽" },
 ];
+const CONSUMABLE_CATEGORIES = new Set(["mat", "vatten", "bransle"]);
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const uid = () => crypto.randomUUID();
@@ -30,6 +34,7 @@ function createPlanner(container, { session = null } = {}) {
   let filter = "alla";
   let tripDays = 6;
   let listSettings = {};
+  let availableLists = [];
   let saveTimer = null;
   let deletedIds = new Set();
   const persistent = Boolean(session);
@@ -54,7 +59,9 @@ function createPlanner(container, { session = null } = {}) {
       return matchesText && (filter === "alla" || item.category === filter);
     });
     const total = items.reduce((sum, item) => sum + itemTotal(item), 0);
-    const consumable = items.filter((item) => item.consumable).reduce((sum, item) => sum + itemTotal(item), 0);
+    const consumable = items
+      .filter((item) => item.consumable && CONSUMABLE_CATEGORIES.has(item.category))
+      .reduce((sum, item) => sum + itemTotal(item), 0);
 
     $("[data-total]", root).textContent = kg(total);
     $("[data-base]", root).textContent = kg(total - consumable);
@@ -70,7 +77,8 @@ function createPlanner(container, { session = null } = {}) {
   }
 
   function categoryName(id) {
-    return categories.find((category) => category.id === id)?.name || "Övrigt";
+    const category = categories.find((candidate) => candidate.id === id);
+    return category ? `${category.icon || ""} ${category.name}`.trim() : "📦 Övrigt";
   }
 
   function renderInsights(total, consumable) {
@@ -129,7 +137,7 @@ function createPlanner(container, { session = null } = {}) {
       button.classList.toggle("active", filter === category.id);
       button.setAttribute("aria-label", `Visa ${category.name}, ${kg(category.weight)}`);
       const name = document.createElement("span");
-      name.textContent = category.name;
+      name.textContent = `${category.icon || ""} ${category.name}`.trim();
       const track = document.createElement("i");
       const fill = document.createElement("b");
       fill.style.width = `${Math.max(3, (category.weight / maxWeight) * 100)}%`;
@@ -173,7 +181,7 @@ function createPlanner(container, { session = null } = {}) {
   }
 
   function renderPrint(total, base, missingCount) {
-    $("[data-print-title]", root).textContent = $(".list-title", root).textContent;
+    $("[data-print-title]", root).textContent = $("[data-list-name]", root).value || "Min packlista";
     $("[data-print-total]", root).textContent = kg(total);
     $("[data-print-base]", root).textContent = kg(base);
     $("[data-print-count]", root).textContent = String(items.length);
@@ -188,6 +196,7 @@ function createPlanner(container, { session = null } = {}) {
         `${item.weight || 0} g`,
         String(item.quantity),
         item.worn ? "✓" : "",
+        item.weighed ? "✓" : "",
         item.owned ? item.note : `INKÖP${item.note ? ` · ${item.note}` : ""}`,
       ];
       values.forEach((value) => {
@@ -234,12 +243,13 @@ function createPlanner(container, { session = null } = {}) {
     categories.forEach((category) => {
       const option = document.createElement("option");
       option.value = category.id;
-      option.textContent = category.name;
+      option.textContent = `${category.icon || ""} ${category.name}`.trim();
       option.selected = item.category === category.id;
       select.append(option);
     });
     select.addEventListener("change", () => {
       item.category = select.value;
+      if (!CONSUMABLE_CATEGORIES.has(item.category)) item.consumable = false;
       scheduleSave();
       render();
     });
@@ -248,8 +258,12 @@ function createPlanner(container, { session = null } = {}) {
     row.insertCell().append(field("number", item.weight, "Vikt i gram", (value) => item.weight = value));
     row.insertCell().append(field("number", item.quantity, "Antal", (value) => item.quantity = value));
     row.insertCell().append(field("checkbox", item.owned, "Jag har prylen", (value) => item.owned = value));
-    row.insertCell().append(field("checkbox", item.consumable, "Förbrukas", (value) => item.consumable = value));
+    const consumable = field("checkbox", item.consumable, "Förbrukas", (value) => item.consumable = value);
+    consumable.disabled = !CONSUMABLE_CATEGORIES.has(item.category);
+    consumable.title = consumable.disabled ? "Förbrukning kan användas för Mat, Vatten och Bränsle" : "";
+    row.insertCell().append(consumable);
     row.insertCell().append(field("checkbox", item.worn, "Bärs på kroppen", (value) => item.worn = value));
+    row.insertCell().append(field("checkbox", item.weighed, "Kontrollvägd", (value) => item.weighed = value));
 
     const deleteCell = row.insertCell();
     const remove = document.createElement("button");
@@ -307,8 +321,9 @@ function createPlanner(container, { session = null } = {}) {
   async function save() {
     const rows = items.map(rowForSave);
     listSettings = { ...listSettings, tripDays };
+    const listName = $("[data-list-name]", root).value.trim() || "Min packlista";
     const listResult = await supabase.from("packing_lists")
-      .update({ categories, settings: listSettings, updated_at: new Date().toISOString() })
+      .update({ name: listName, categories, settings: listSettings, updated_at: new Date().toISOString() })
       .eq("id", listId).eq("user_id", session.user.id);
     let error = listResult.error;
     if (!error && rows.length) {
@@ -324,12 +339,64 @@ function createPlanner(container, { session = null } = {}) {
       error = result.error;
     }
     if (!error) deletedIds.clear();
+    const selectedList = availableLists.find((list) => list.id === listId);
+    if (!error && selectedList) {
+      selectedList.name = listName;
+      renderListSwitcher();
+    }
     saveState.textContent = error ? "Kunde inte spara" : "Sparad ✓";
+  }
+
+  function mergedCategories(stored = []) {
+    return DEFAULT_CATEGORIES.map((fallback) => {
+      const match = stored.find((category) => category.id === fallback.id);
+      return { ...fallback, ...match, icon: match?.icon || fallback.icon };
+    });
+  }
+
+  function renderListSwitcher() {
+    const select = $("[data-list-select]", root);
+    select.replaceChildren(...availableLists.map((list) => {
+      const option = document.createElement("option");
+      option.value = list.id;
+      option.textContent = list.name;
+      option.selected = list.id === listId;
+      return option;
+    }));
+  }
+
+  async function openList(list) {
+    listId = list.id;
+    categories = mergedCategories(list.categories);
+    listSettings = list.settings || {};
+    tripDays = Math.max(1, Number(listSettings.tripDays) || 6);
+    $("[data-trip-days]", root).value = String(tripDays);
+    $("[data-list-name]", root).value = list.name;
+    filter = "alla";
+    query = "";
+    $("[data-search]", root).value = "";
+    deletedIds.clear();
+
+    const stored = await supabase.from("packing_items")
+      .select("client_id,name,category,weight,quantity,owned,consumable,worn,weighed,note")
+      .eq("packing_list_id", listId).order("sort_order");
+    if (stored.error) throw stored.error;
+    items = stored.data.map((item) => ({
+      ...item,
+      id: item.client_id,
+      consumable: item.consumable && CONSUMABLE_CATEGORIES.has(item.category),
+    }));
+    saveState.textContent = "Sparad ✓";
+    renderListSwitcher();
+    renderFilters();
+    render();
   }
 
   async function load() {
     if (!persistent) {
+      categories = mergedCategories();
       saveState.textContent = "Testläge · sparas inte";
+      renderFilters();
       render();
       return;
     }
@@ -342,37 +409,24 @@ function createPlanner(container, { session = null } = {}) {
     });
     if (profile.error) throw profile.error;
 
-    let { data: list, error } = await supabase.from("packing_lists")
-      .select("id,name,categories,settings").eq("user_id", userId)
-      .order("created_at").limit(1).maybeSingle();
-    if (error) throw error;
-    if (!list) {
+    const result = await supabase.from("packing_lists")
+      .select("id,name,categories,settings,created_at").eq("user_id", userId).order("created_at");
+    if (result.error) throw result.error;
+    availableLists = result.data;
+    if (!availableLists.length) {
       const created = await supabase.from("packing_lists")
         .insert({ user_id: userId, name: "Min packlista", categories: DEFAULT_CATEGORIES, settings: { tripDays: 6 } })
-        .select("id,name,categories,settings").single();
+        .select("id,name,categories,settings,created_at").single();
       if (created.error) throw created.error;
-      list = created.data;
+      availableLists = [created.data];
     }
-    listId = list.id;
-    categories = list.categories?.length ? list.categories : DEFAULT_CATEGORIES;
-    listSettings = list.settings || {};
-    tripDays = Math.max(1, Number(listSettings.tripDays) || 6);
-    $("[data-trip-days]", root).value = String(tripDays);
-    $(".list-title", root).textContent = list.name;
-
-    const stored = await supabase.from("packing_items")
-      .select("client_id,name,category,weight,quantity,owned,consumable,worn,weighed,note")
-      .eq("packing_list_id", listId).order("sort_order");
-    if (stored.error) throw stored.error;
-    items = stored.data.map((item) => ({ ...item, id: item.client_id }));
-    saveState.textContent = "Sparad ✓";
-    renderFilters();
-    render();
+    $("[data-list-switcher]", root).hidden = false;
+    await openList(availableLists[0]);
   }
 
   function renderFilters() {
     filterSelect.replaceChildren();
-    [["alla", "Alla kategorier"], ...categories.map((category) => [category.id, category.name])].forEach(([value, label]) => {
+    [["alla", "🌐 Alla kategorier"], ...categories.map((category) => [category.id, `${category.icon || ""} ${category.name}`.trim()])].forEach(([value, label]) => {
       const option = document.createElement("option");
       option.value = value;
       option.textContent = label;
@@ -408,6 +462,39 @@ function createPlanner(container, { session = null } = {}) {
     filter = "alla";
     filterSelect.value = filter;
     render();
+  });
+  $("[data-list-name]", root).addEventListener("change", (event) => {
+    event.target.value = event.target.value.trim() || "Min packlista";
+    scheduleSave();
+    render();
+  });
+  $("[data-list-select]", root).addEventListener("change", async (event) => {
+    const nextId = event.target.value;
+    clearTimeout(saveTimer);
+    if (listId) await save();
+    const next = availableLists.find((list) => list.id === nextId);
+    if (next) await openList(next);
+  });
+  $("[data-new-list]", root).addEventListener("click", async () => {
+    clearTimeout(saveTimer);
+    if (listId) await save();
+    const number = availableLists.length + 1;
+    const created = await supabase.from("packing_lists")
+      .insert({
+        user_id: session.user.id,
+        name: `Ny packlista ${number}`,
+        categories: DEFAULT_CATEGORIES,
+        settings: { tripDays: 6 },
+      })
+      .select("id,name,categories,settings,created_at").single();
+    if (created.error) {
+      saveState.textContent = "Kunde inte skapa listan";
+      return;
+    }
+    availableLists.push(created.data);
+    await openList(created.data);
+    $("[data-list-name]", root).focus();
+    $("[data-list-name]", root).select();
   });
 
   renderFilters();

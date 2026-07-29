@@ -35,7 +35,11 @@ button{cursor:pointer}
 .section-heading>p{max-width:520px;margin:0;color:var(--muted);line-height:1.5}
 .planner{display:grid;grid-template-columns:260px minmax(0,1fr);min-height:620px;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#0b1b13;box-shadow:0 20px 70px rgba(0,0,0,.22)}
 .planner-sidebar{padding:28px 22px;border-right:1px solid var(--line);background:#0a1710}
-.planner-sidebar h2{margin:0;font-size:22px}
+.list-title{width:100%;border:0;border-bottom:1px solid transparent;background:transparent;color:var(--text);padding:3px 0;font-size:22px;font-weight:800}
+.list-title:hover,.list-title:focus{outline:0;border-color:var(--green)}
+.list-switcher{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin-top:12px}
+.list-switcher select,.list-switcher button{min-width:0;border:1px solid var(--line);border-radius:7px;background:#07130d;color:var(--text);padding:7px;font-size:11px}
+.list-switcher button{color:var(--green);white-space:nowrap}
 .planner-nav{display:grid;gap:6px;margin:26px 0}
 .planner-nav button{display:flex;align-items:center;justify-content:space-between;width:100%;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--text);padding:10px 12px;text-align:left}
 .planner-nav button:hover,.planner-nav button.active{border-color:var(--line);background:#133123}
@@ -63,10 +67,11 @@ button{cursor:pointer}
 .category-bar i{height:7px;border-radius:99px;background:#1d4030;overflow:hidden}.category-bar b{display:block;height:100%;border-radius:inherit;background:var(--green)}
 .category-bar strong{text-align:right;font-size:12px}.empty-insight{padding:45px 12px;color:var(--muted);font-size:12px;text-align:center}
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
-table{width:100%;min-width:850px;border-collapse:collapse}
+table{width:100%;min-width:980px;border-collapse:collapse}
 th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}
 th{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase}
-td:nth-child(n+5):nth-child(-n+7){text-align:center}td input[type=checkbox]{width:auto}
+td:nth-child(n+5):nth-child(-n+8){text-align:center}td input[type=checkbox]{width:auto}
+td input[type=checkbox]:disabled{cursor:not-allowed;opacity:.25}
 .delete-button,.close-button{border:0;background:transparent;color:#e89a7b;font-size:23px}
 .empty-list{padding:80px 20px;text-align:center}.empty-list>span{color:var(--green);font-size:36px}.empty-list h3{margin:14px 0 6px}.empty-list p{color:var(--muted)}
 .empty-list.compact{padding:60px 20px}
