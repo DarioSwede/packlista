@@ -1,5 +1,7 @@
 const cfg = window.PACKLISTA_CONFIG;
-const supabase = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY);
+const supabase = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
+  auth: { experimental: { passkey: true } },
+});
 
 const DEFAULT_CATEGORIES = [
   { id: "ryggsack", name: "Ryggsäck" },
@@ -272,6 +274,12 @@ $("#sign-up").addEventListener("click", async () => {
   authMessage.textContent = error
     ? `Kunde inte skapa konto: ${error.message}`
     : data.session ? "" : "Kontot är skapat. Bekräfta adressen via mejlet du fått.";
+});
+
+$("#passkey-sign-in").addEventListener("click", async () => {
+  authMessage.textContent = "Väntar på din säkerhetsnyckel…";
+  const { error } = await supabase.auth.signInWithPasskey();
+  authMessage.textContent = error ? `Kunde inte logga in: ${error.message}` : "";
 });
 
 $("#sign-out").addEventListener("click", () => supabase.auth.signOut());

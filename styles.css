@@ -57,6 +57,8 @@ td:nth-child(n+5):nth-child(-n+7){text-align:center}td input[type=checkbox]{widt
 .login-card form{display:grid;gap:8px}.login-card label{color:var(--muted);font-size:12px}
 .login-card input{width:100%;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;background:#07130d;color:var(--text);padding:11px}
 .login-card .primary-button,.login-card .secondary-button{width:100%;margin-top:6px}
+.auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0 10px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.12em}
+.auth-divider::before,.auth-divider::after{content:"";height:1px;flex:1;background:var(--line)}
 .close-button{position:absolute;right:14px;top:10px}.form-message{min-height:20px;margin-bottom:0;color:#e7c77b;font-size:13px;line-height:1.4}
 @media(max-width:800px){
   .hero{grid-template-columns:1fr;gap:48px;min-height:0;padding:70px 0}.hero-card{max-width:520px}
