@@ -86,6 +86,11 @@
           <p class="eyebrow">Packöversikt</p>
           <h2 class="list-title">Min packlista</h2>
         </div>
+        <nav class="planner-nav" aria-label="Packlistans vyer">
+          <button class="active" data-view-button="packing">Packlista</button>
+          <button data-view-button="shopping">Inköp <span data-shopping-badge>0</span></button>
+          <button data-view-button="print">A4-utskrift</button>
+        </nav>
         <div class="totals">
           <article><span>Startvikt</span><strong data-total>0,00 kg</strong></article>
           <article><span>Grundvikt</span><strong data-base>0,00 kg</strong></article>
@@ -95,28 +100,75 @@
         <p class="save-state" data-save-state></p>
       </aside>
       <div class="planner-content">
-        <div class="toolbar">
-          <input data-search type="search" placeholder="Sök pryl…" aria-label="Sök pryl">
-          <select data-category-filter aria-label="Filtrera kategori"></select>
-          <button class="primary-button" data-add>+ Lägg till pryl</button>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Artikel</th><th>Kategori</th><th>Vikt</th><th>Antal</th>
-                <th>Har</th><th>Förbrukas</th><th>På mig</th><th></th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-          <div class="empty-list" data-empty>
-            <span>△</span>
-            <h3>Listan är tom</h3>
-            <p>Lägg till din första pryl för att börja räkna packvikten.</p>
-            <button class="secondary-button" data-empty-add>+ Lägg till pryl</button>
+        <div data-view="packing">
+          <div class="toolbar">
+            <input data-search type="search" placeholder="Sök pryl…" aria-label="Sök pryl">
+            <select data-category-filter aria-label="Filtrera kategori"></select>
+            <button class="primary-button" data-add>+ Lägg till pryl</button>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Artikel</th><th>Kategori</th><th>Vikt</th><th>Antal</th>
+                  <th>Har</th><th>Förbrukas</th><th>På mig</th><th></th>
+                </tr>
+              </thead>
+              <tbody data-items-body></tbody>
+            </table>
+            <div class="empty-list" data-empty>
+              <span>△</span>
+              <h3>Listan är tom</h3>
+              <p>Lägg till din första pryl för att börja räkna packvikten.</p>
+              <button class="secondary-button" data-empty-add>+ Lägg till pryl</button>
+            </div>
           </div>
         </div>
+
+        <section class="subview" data-view="shopping" hidden>
+          <div class="view-heading">
+            <div>
+              <p class="eyebrow">Att ordna</p>
+              <h2>Inköpslista</h2>
+              <p>Prylar som inte är markerade som “Har” visas automatiskt här.</p>
+            </div>
+            <button class="primary-button" data-shopping-add>+ Lägg till inköp</button>
+          </div>
+          <div class="shopping-list" data-shopping-list></div>
+          <div class="empty-list compact" data-shopping-empty>
+            <span>✓</span>
+            <h3>Inköpslistan är tom</h3>
+            <p>Du har markerat att du har alla prylar.</p>
+          </div>
+        </section>
+
+        <section class="subview" data-view="print" hidden>
+          <div class="view-heading no-print">
+            <div>
+              <p class="eyebrow">Förbered turen</p>
+              <h2>A4-utskrift</h2>
+              <p>En ren översikt som är anpassad för en eller flera A4-sidor.</p>
+            </div>
+            <button class="primary-button" data-print>🖨 Skriv ut</button>
+          </div>
+          <article class="print-sheet">
+            <header>
+              <p>PACKLISTA</p>
+              <h1 data-print-title>Min packlista</h1>
+              <div class="print-summary">
+                <span>Startvikt: <strong data-print-total>0,00 kg</strong></span>
+                <span>Grundvikt: <strong data-print-base>0,00 kg</strong></span>
+                <span>Prylar: <strong data-print-count>0</strong></span>
+                <span>Inköp: <strong data-print-missing>0</strong></span>
+              </div>
+            </header>
+            <table class="print-table">
+              <thead><tr><th>✓</th><th>Artikel</th><th>Kategori</th><th>Vikt</th><th>Antal</th><th>På mig</th><th>Notering</th></tr></thead>
+              <tbody data-print-body></tbody>
+            </table>
+            <div class="print-empty" data-print-empty>Listan är tom.</div>
+          </article>
+        </section>
       </div>
     </section>
   </template>

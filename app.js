@@ -32,10 +32,14 @@ function createPlanner(container, { session = null } = {}) {
   let deletedIds = new Set();
   const persistent = Boolean(session);
 
-  const tbody = $("tbody", root);
+  const tbody = $("[data-items-body]", root);
   const empty = $("[data-empty]", root);
   const saveState = $("[data-save-state]", root);
   const filterSelect = $("[data-category-filter]", root);
+  const shoppingList = $("[data-shopping-list]", root);
+  const shoppingEmpty = $("[data-shopping-empty]", root);
+  const printBody = $("[data-print-body]", root);
+  let activeView = "packing";
 
   function itemTotal(item) {
     const packedQuantity = Math.max(0, item.quantity - (item.worn ? 1 : 0));
@@ -53,9 +57,80 @@ function createPlanner(container, { session = null } = {}) {
     $("[data-total]", root).textContent = kg(total);
     $("[data-base]", root).textContent = kg(total - consumable);
     $("[data-count]", root).textContent = String(items.length);
-    $("[data-missing]", root).textContent = String(items.filter((item) => !item.owned).length);
+    const missing = items.filter((item) => !item.owned);
+    $("[data-missing]", root).textContent = String(missing.length);
+    $("[data-shopping-badge]", root).textContent = String(missing.length);
     empty.hidden = items.length > 0;
     tbody.replaceChildren(...visible.map(itemRow));
+    renderShopping(missing);
+    renderPrint(total, total - consumable, missing.length);
+  }
+
+  function categoryName(id) {
+    return categories.find((category) => category.id === id)?.name || "Övrigt";
+  }
+
+  function renderShopping(missing) {
+    shoppingEmpty.hidden = missing.length > 0;
+    shoppingList.replaceChildren(...missing.map((item) => {
+      const row = document.createElement("article");
+      row.className = "shopping-item";
+      const check = document.createElement("input");
+      check.type = "checkbox";
+      check.setAttribute("aria-label", `Markera ${item.name} som inköpt`);
+      check.addEventListener("change", () => {
+        item.owned = true;
+        scheduleSave();
+        render();
+      });
+      const info = document.createElement("div");
+      const name = document.createElement("strong");
+      name.textContent = item.name;
+      const meta = document.createElement("span");
+      meta.textContent = `${categoryName(item.category)} · ${item.quantity} st · ${item.weight || 0} g`;
+      info.append(name, meta);
+      const label = document.createElement("label");
+      label.append(check, document.createTextNode(" Inköpt"));
+      row.append(info, label);
+      return row;
+    }));
+  }
+
+  function renderPrint(total, base, missingCount) {
+    $("[data-print-title]", root).textContent = $(".list-title", root).textContent;
+    $("[data-print-total]", root).textContent = kg(total);
+    $("[data-print-base]", root).textContent = kg(base);
+    $("[data-print-count]", root).textContent = String(items.length);
+    $("[data-print-missing]", root).textContent = String(missingCount);
+    $("[data-print-empty]", root).hidden = items.length > 0;
+    printBody.replaceChildren(...items.map((item) => {
+      const row = document.createElement("tr");
+      const values = [
+        "☐",
+        item.name,
+        categoryName(item.category),
+        `${item.weight || 0} g`,
+        String(item.quantity),
+        item.worn ? "✓" : "",
+        item.owned ? item.note : `INKÖP${item.note ? ` · ${item.note}` : ""}`,
+      ];
+      values.forEach((value) => {
+        const cell = row.insertCell();
+        cell.textContent = value;
+      });
+      return row;
+    }));
+  }
+
+  function showView(view) {
+    activeView = view;
+    root.querySelectorAll("[data-view]").forEach((panel) => {
+      panel.hidden = panel.dataset.view !== activeView;
+    });
+    root.querySelectorAll("[data-view-button]").forEach((button) => {
+      button.classList.toggle("active", button.dataset.viewButton === activeView);
+    });
+    render();
   }
 
   function field(type, value, label, change) {
@@ -227,6 +302,14 @@ function createPlanner(container, { session = null } = {}) {
 
   $("[data-add]", root).addEventListener("click", addItem);
   $("[data-empty-add]", root).addEventListener("click", addItem);
+  $("[data-shopping-add]", root).addEventListener("click", () => {
+    addItem();
+    showView("packing");
+  });
+  $("[data-print]", root).addEventListener("click", () => window.print());
+  root.querySelectorAll("[data-view-button]").forEach((button) => {
+    button.addEventListener("click", () => showView(button.dataset.viewButton));
+  });
   $("[data-search]", root).addEventListener("input", (event) => {
     query = event.target.value.trim().toLowerCase();
     render();
