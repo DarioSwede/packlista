@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#08140f">
+  <meta name="description" content="Skapa en personlig packlista och håll koll på vikten inför nästa vandring.">
+  <title>Packlista</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="signed-out">
+    <header class="site-header">
+      <a class="brand" href="./">▲ Packlista</a>
+      <button class="quiet-button" id="open-login">Logga in</button>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div>
+          <p class="eyebrow">Planera · väg · vandra</p>
+          <h1>Packa lättare.<br>Vandra tryggare.</h1>
+          <p class="lead">Prova en tom packlista direkt. Skapa ett konto när du vill spara den och fortsätta på en annan enhet.</p>
+          <a class="primary-link" href="#prova">Prova utan konto</a>
+        </div>
+        <div class="hero-card" aria-label="Exempel på viktsammanfattning">
+          <span>Din nästa tur</span>
+          <strong>0,00 kg</strong>
+          <div class="weight-line"><i></i></div>
+          <dl>
+            <div><dt>Grundvikt</dt><dd>0,00 kg</dd></div>
+            <div><dt>Antal prylar</dt><dd>0</dd></div>
+          </dl>
+        </div>
+      </section>
+
+      <section class="planner-section" id="prova">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Testläge</p>
+            <h2>Din tomma packlista</h2>
+          </div>
+          <p>Ändringar i testläget sparas inte. Logga in för att skapa din egen beständiga lista.</p>
+        </div>
+        <div id="guest-planner"></div>
+      </section>
+    </main>
+  </div>
+
+  <div id="signed-in" hidden>
+    <header class="app-header">
+      <a class="brand" href="./">▲ Packlista</a>
+      <div>
+        <span id="account-email"></span>
+        <button class="quiet-button" id="sign-out">Logga ut</button>
+      </div>
+    </header>
+    <main class="private-main">
+      <div id="private-planner"></div>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="login-modal" hidden>
+    <section class="login-card" role="dialog" aria-modal="true" aria-labelledby="login-title">
+      <button class="close-button" id="close-login" aria-label="Stäng">×</button>
+      <p class="eyebrow">Spara din lista</p>
+      <h2 id="login-title">Logga in eller skapa konto</h2>
+      <form id="auth-form">
+        <label for="email">E-post</label>
+        <input id="email" type="email" autocomplete="email" required>
+        <label for="password">Lösenord</label>
+        <input id="password" type="password" autocomplete="current-password" minlength="6" required>
+        <button class="primary-button" type="submit">Logga in</button>
+      </form>
+      <button class="secondary-button" id="sign-up">Skapa konto</button>
+      <p class="form-message" id="auth-message" aria-live="polite"></p>
+    </section>
+  </div>
+
+  <template id="planner-template">
+    <section class="planner">
+      <aside class="planner-sidebar">
+        <div>
+          <p class="eyebrow">Packöversikt</p>
+          <h2 class="list-title">Min packlista</h2>
+        </div>
+        <div class="totals">
+          <article><span>Startvikt</span><strong data-total>0,00 kg</strong></article>
+          <article><span>Grundvikt</span><strong data-base>0,00 kg</strong></article>
+          <article><span>Antal prylar</span><strong data-count>0</strong></article>
+          <article><span>Saknas</span><strong data-missing>0</strong></article>
+        </div>
+        <p class="save-state" data-save-state></p>
+      </aside>
+      <div class="planner-content">
+        <div class="toolbar">
+          <input data-search type="search" placeholder="Sök pryl…" aria-label="Sök pryl">
+          <select data-category-filter aria-label="Filtrera kategori"></select>
+          <button class="primary-button" data-add>+ Lägg till pryl</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Artikel</th><th>Kategori</th><th>Vikt</th><th>Antal</th>
+                <th>Har</th><th>Förbrukas</th><th>På mig</th><th></th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+          <div class="empty-list" data-empty>
+            <span>△</span>
+            <h3>Listan är tom</h3>
+            <p>Lägg till din första pryl för att börja räkna packvikten.</p>
+            <button class="secondary-button" data-empty-add>+ Lägg till pryl</button>
+          </div>
+        </div>
+      </div>
+    </section>
+  </template>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
+  <script src="config.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

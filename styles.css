@@ -1,0 +1,73 @@
+:root{
+  --bg:#08140f;--panel:#10251b;--line:#284638;--text:#f2f6ef;--muted:#9caf9f;
+  --green:#9ae691;--paper:#f6f4ee;--ink:#152019;--clay:#9b6848;
+  font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  color:var(--text);background:var(--bg);font-synthesis:none
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;min-width:320px;background:radial-gradient(circle at 20% 0,#173524 0,var(--bg) 32%);color:var(--text)}
+button,input,select{font:inherit}
+button,a{transition:.15s ease}
+button{cursor:pointer}
+[hidden]{display:none!important}
+.site-header,.app-header{width:min(1180px,calc(100% - 40px));height:76px;margin:auto;display:flex;align-items:center;justify-content:space-between}
+.app-header>div{display:flex;align-items:center;gap:16px;color:var(--muted);font-size:13px}
+.brand{color:var(--text);font-size:16px;font-weight:800;letter-spacing:.05em;text-decoration:none}
+.quiet-button,.secondary-button{border:1px solid var(--line);border-radius:9px;background:transparent;color:inherit;padding:9px 14px}
+.quiet-button:hover,.secondary-button:hover{border-color:var(--green);color:var(--green)}
+.hero{width:min(1180px,calc(100% - 40px));min-height:620px;margin:auto;display:grid;grid-template-columns:1.25fr .75fr;align-items:center;gap:80px;padding:60px 0 100px}
+.eyebrow{margin:0 0 14px;color:var(--green);font-size:11px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+.hero h1{margin:0;font-family:Georgia,"Times New Roman",serif;font-size:clamp(48px,7vw,88px);font-weight:500;line-height:.96;letter-spacing:-.055em}
+.lead{max-width:620px;margin:28px 0 34px;color:#becbc1;font-size:20px;line-height:1.55}
+.primary-link,.primary-button{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--green);border-radius:9px;background:var(--green);color:#0a1710;padding:11px 17px;font-weight:800;text-decoration:none}
+.primary-link:hover,.primary-button:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.hero-card{border:1px solid var(--line);border-radius:22px;background:rgba(16,37,27,.82);padding:30px;box-shadow:0 28px 80px rgba(0,0,0,.3)}
+.hero-card>span{color:var(--muted);font-size:13px}
+.hero-card>strong{display:block;margin:10px 0 24px;font-family:Georgia,serif;font-size:52px;font-weight:500}
+.weight-line{height:10px;border-radius:99px;background:#203c2e;overflow:hidden}.weight-line i{display:block;width:8%;height:100%;background:var(--green)}
+.hero-card dl{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:24px 0 0}
+.hero-card dl div{border:1px solid var(--line);border-radius:10px;padding:12px}
+.hero-card dt{color:var(--muted);font-size:11px}.hero-card dd{margin:5px 0 0;font-weight:700}
+.planner-section{width:min(1500px,calc(100% - 40px));margin:0 auto 64px}
+.section-heading{display:flex;align-items:end;justify-content:space-between;gap:30px;margin-bottom:20px}
+.section-heading h2{margin:0;font-family:Georgia,serif;font-size:38px;font-weight:500}
+.section-heading>p{max-width:520px;margin:0;color:var(--muted);line-height:1.5}
+.planner{display:grid;grid-template-columns:260px minmax(0,1fr);min-height:620px;border:1px solid var(--line);border-radius:20px;overflow:hidden;background:#0b1b13;box-shadow:0 20px 70px rgba(0,0,0,.22)}
+.planner-sidebar{padding:28px 22px;border-right:1px solid var(--line);background:#0a1710}
+.planner-sidebar h2{margin:0;font-size:22px}
+.totals{display:grid;gap:10px;margin-top:30px}
+.totals article{border:1px solid var(--line);border-radius:10px;padding:13px}
+.totals span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase}.totals strong{display:block;margin-top:5px;font-size:20px}
+.save-state{color:var(--muted);font-size:12px}
+.planner-content{min-width:0;padding:24px}
+.toolbar{display:grid;grid-template-columns:minmax(180px,1fr) 190px auto;gap:10px;margin-bottom:16px}
+.toolbar input,.toolbar select,.table-wrap input,.table-wrap select{width:100%;border:1px solid var(--line);border-radius:8px;background:#07130d;color:var(--text);padding:9px}
+.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table{width:100%;min-width:850px;border-collapse:collapse}
+th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}
+th{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase}
+td:nth-child(n+5):nth-child(-n+7){text-align:center}td input[type=checkbox]{width:auto}
+.delete-button,.close-button{border:0;background:transparent;color:#e89a7b;font-size:23px}
+.empty-list{padding:80px 20px;text-align:center}.empty-list>span{color:var(--green);font-size:36px}.empty-list h3{margin:14px 0 6px}.empty-list p{color:var(--muted)}
+.private-main{width:min(1500px,calc(100% - 40px));margin:24px auto 60px}
+.modal-backdrop{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:20px;background:rgba(2,8,5,.78);backdrop-filter:blur(8px)}
+.login-card{position:relative;width:min(430px,100%);border:1px solid var(--line);border-radius:18px;background:#10251b;padding:30px;box-shadow:0 30px 100px #000}
+.login-card h2{margin:0 0 24px;font-family:Georgia,serif;font-size:30px;font-weight:500}
+.login-card form{display:grid;gap:8px}.login-card label{color:var(--muted);font-size:12px}
+.login-card input{width:100%;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;background:#07130d;color:var(--text);padding:11px}
+.login-card .primary-button,.login-card .secondary-button{width:100%;margin-top:6px}
+.close-button{position:absolute;right:14px;top:10px}.form-message{min-height:20px;margin-bottom:0;color:#e7c77b;font-size:13px;line-height:1.4}
+@media(max-width:800px){
+  .hero{grid-template-columns:1fr;gap:48px;min-height:0;padding:70px 0}.hero-card{max-width:520px}
+  .section-heading{display:block}.section-heading>p{margin-top:12px}
+  .planner{grid-template-columns:1fr}.planner-sidebar{border-right:0;border-bottom:1px solid var(--line)}
+  .totals{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr 1fr}.toolbar .primary-button{grid-column:1/-1}
+}
+@media(max-width:480px){
+  .site-header,.app-header,.hero,.planner-section,.private-main{width:calc(100% - 24px)}
+  .hero h1{font-size:48px}.lead{font-size:17px}.hero-card>strong{font-size:42px}
+  .planner-section,.private-main{width:100%;margin-bottom:0}.section-heading{padding:0 12px}
+  .planner{border-left:0;border-right:0;border-radius:0}.planner-content{padding:14px 10px}
+  .totals{grid-template-columns:1fr 1fr}.app-header>div span{display:none}
+}
