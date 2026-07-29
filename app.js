@@ -271,7 +271,7 @@ function createPlanner(container, { session = null } = {}) {
     const remove = document.createElement("button");
     remove.className = "delete-button";
     remove.textContent = "×";
-    remove.setAttribute("aria-label", `Ta bort ${item.name}`);
+    remove.setAttribute("aria-label", `Ta bort ${item.name || "pryl"}`);
     remove.addEventListener("click", () => {
       deletedIds.add(item.id);
       items = items.filter((candidate) => candidate.id !== item.id);
@@ -283,12 +283,24 @@ function createPlanner(container, { session = null } = {}) {
   }
 
   function addItem() {
+    filter = "alla";
+    query = "";
+    filterSelect.value = "alla";
+    $("[data-search]", root).value = "";
     items.push({
-      id: uid(), name: "Ny pryl", category: "ovrigt", weight: 0, quantity: 1,
+      id: uid(), name: "", category: "ovrigt", weight: 0, quantity: 1,
       owned: false, consumable: false, worn: false, weighed: false, note: "",
     });
     scheduleSave();
     render();
+    requestAnimationFrame(() => {
+      const nameFields = root.querySelectorAll('[data-items-body] input[aria-label="Artikel"]');
+      const newest = nameFields[nameFields.length - 1];
+      if (newest) {
+        newest.focus();
+        newest.select();
+      }
+    });
   }
 
   function rowForSave(item, index) {
@@ -455,7 +467,7 @@ function createPlanner(container, { session = null } = {}) {
     render();
   });
   root.querySelectorAll("[data-trip-days]").forEach((input) => {
-    input.addEventListener("change", (event) => {
+    input.addEventListener("input", (event) => {
       tripDays = Math.min(60, Math.max(1, Number(event.target.value) || 1));
       root.querySelectorAll("[data-trip-days]").forEach((other) => other.value = String(tripDays));
       scheduleSave();

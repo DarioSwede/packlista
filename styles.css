@@ -49,10 +49,11 @@ button{cursor:pointer}
 .totals span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase}.totals strong{display:block;margin-top:5px;font-size:20px}
 .save-state{color:var(--muted);font-size:12px}
 .planner-content{min-width:0;padding:24px}
-.toolbar{display:grid;grid-template-columns:minmax(180px,1fr) 190px 130px auto;gap:10px;margin-bottom:16px}
+.toolbar{display:grid;grid-template-columns:minmax(180px,1fr) 190px 130px;gap:10px;margin-bottom:16px}
 .toolbar input,.toolbar select,.table-wrap input,.table-wrap select{width:100%;border:1px solid var(--line);border-radius:8px;background:#07130d;color:var(--text);padding:9px}
 .days-control{display:grid;grid-template-columns:1fr 48px;align-items:center;gap:7px;border:1px solid var(--line);border-radius:8px;background:#07130d;padding:0 8px;color:var(--muted);font-size:11px;text-transform:uppercase}
 .days-control input{border:0;padding:8px 2px;text-align:center}
+.add-bottom{width:100%;margin-top:12px}
 .insights-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-bottom:16px}
 .insight-card{min-width:0;border:1px solid var(--line);border-radius:12px;background:#0d2117;padding:18px}
 .insight-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
