@@ -568,6 +568,8 @@ function passkeyErrorMessage(error) {
 
 $("#passkey-sign-in").addEventListener("click", async () => {
   authMessage.textContent = "Väntar på din säkerhetsnyckel…";
+  window.focus();
+  $("#passkey-sign-in").focus({ preventScroll: true });
   const { error } = await supabase.auth.signInWithPasskey();
   authMessage.textContent = error ? `Kunde inte logga in: ${passkeyErrorMessage(error)}` : "";
 });
