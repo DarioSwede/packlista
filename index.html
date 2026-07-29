@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#08140f">
   <meta name="description" content="Skapa en personlig packlista och håll koll på vikten inför nästa vandring.">
   <title>Packlista</title>
-  <link rel="stylesheet" href="styles.css?v=3">
+  <link rel="stylesheet" href="styles.css?v=4">
 </head>
 <body>
   <div id="signed-out">
@@ -106,6 +106,30 @@
             <select data-category-filter aria-label="Filtrera kategori"></select>
             <button class="primary-button" data-add>+ Lägg till pryl</button>
           </div>
+          <div class="insights-grid">
+            <section class="insight-card forecast-card">
+              <div class="insight-heading">
+                <div>
+                  <p class="eyebrow">Viktprognos</p>
+                  <h3>Packvikten dag för dag</h3>
+                </div>
+                <label>Dagar <input data-trip-days type="number" min="1" max="60" value="6"></label>
+              </div>
+              <div class="forecast-chart" data-forecast-chart></div>
+              <p class="forecast-caption" data-forecast-caption></p>
+            </section>
+            <section class="insight-card">
+              <div class="insight-heading">
+                <div>
+                  <p class="eyebrow">Vikt per kategori</p>
+                  <h3>Klicka för att snabbfiltrera</h3>
+                </div>
+                <button class="clear-filter" data-clear-category hidden>Visa alla</button>
+              </div>
+              <div class="category-chart" data-category-chart></div>
+              <div class="empty-insight" data-category-empty>Vikter per kategori visas när du lagt till prylar.</div>
+            </section>
+          </div>
           <div class="table-wrap">
             <table>
               <thead>
@@ -175,6 +199,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=3"></script>
+  <script type="module" src="app.js?v=4"></script>
 </body>
 </html>

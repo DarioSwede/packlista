@@ -28,6 +28,8 @@ function createPlanner(container, { session = null } = {}) {
   let categories = DEFAULT_CATEGORIES;
   let query = "";
   let filter = "alla";
+  let tripDays = 6;
+  let listSettings = {};
   let saveTimer = null;
   let deletedIds = new Set();
   const persistent = Boolean(session);
@@ -62,12 +64,86 @@ function createPlanner(container, { session = null } = {}) {
     $("[data-shopping-badge]", root).textContent = String(missing.length);
     empty.hidden = items.length > 0;
     tbody.replaceChildren(...visible.map(itemRow));
+    renderInsights(total, consumable);
     renderShopping(missing);
     renderPrint(total, total - consumable, missing.length);
   }
 
   function categoryName(id) {
     return categories.find((category) => category.id === id)?.name || "Övrigt";
+  }
+
+  function renderInsights(total, consumable) {
+    const forecast = $("[data-forecast-chart]", root);
+    const endWeight = total - consumable;
+    const days = Math.max(1, tripDays);
+    const points = Array.from({ length: days }, (_, index) => {
+      const usedShare = days === 1 ? 0 : index / (days - 1);
+      return total - (consumable * usedShare);
+    });
+    const width = 560;
+    const height = 150;
+    const padding = 14;
+    const range = Math.max(1, total - endWeight);
+    const coords = points.map((weight, index) => {
+      const x = days === 1 ? padding : padding + (index / (days - 1)) * (width - padding * 2);
+      const y = padding + ((total - weight) / range) * (height - padding * 2);
+      return [x, y];
+    });
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", `Viktprognos från ${kg(total)} till ${kg(endWeight)} under ${days} dagar`);
+    const area = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+    area.setAttribute("points", `${coords.map((point) => point.join(",")).join(" ")} ${width - padding},${height - padding} ${padding},${height - padding}`);
+    area.setAttribute("class", "forecast-area");
+    const line = document.createElementNS("http://www.w3.org/2000/svg", "polyline");
+    line.setAttribute("points", coords.map((point) => point.join(",")).join(" "));
+    line.setAttribute("class", "forecast-line");
+    svg.append(area, line);
+    coords.forEach(([x, y], index) => {
+      if (days > 14 && index !== 0 && index !== days - 1) return;
+      const dot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      dot.setAttribute("cx", x);
+      dot.setAttribute("cy", y);
+      dot.setAttribute("r", "4");
+      dot.setAttribute("class", "forecast-dot");
+      svg.append(dot);
+    });
+    forecast.replaceChildren(svg);
+    $("[data-forecast-caption]", root).textContent = consumable
+      ? `Dag 1: ${kg(total)} → Dag ${days}: ${kg(endWeight)} · jämn förbrukning över dagarna.`
+      : `Markera mat, bränsle och annat som “Förbrukas” för att se hur vikten minskar.`;
+
+    const grouped = categories.map((category) => ({
+      ...category,
+      weight: items.filter((item) => item.category === category.id).reduce((sum, item) => sum + itemTotal(item), 0),
+    })).filter((category) => category.weight > 0).sort((a, b) => b.weight - a.weight);
+    const maxWeight = Math.max(1, ...grouped.map((category) => category.weight));
+    const chart = $("[data-category-chart]", root);
+    $("[data-category-empty]", root).hidden = grouped.length > 0;
+    $("[data-clear-category]", root).hidden = filter === "alla";
+    chart.replaceChildren(...grouped.map((category) => {
+      const button = document.createElement("button");
+      button.className = "category-bar";
+      button.classList.toggle("active", filter === category.id);
+      button.setAttribute("aria-label", `Visa ${category.name}, ${kg(category.weight)}`);
+      const name = document.createElement("span");
+      name.textContent = category.name;
+      const track = document.createElement("i");
+      const fill = document.createElement("b");
+      fill.style.width = `${Math.max(3, (category.weight / maxWeight) * 100)}%`;
+      track.append(fill);
+      const weight = document.createElement("strong");
+      weight.textContent = kg(category.weight);
+      button.append(name, track, weight);
+      button.addEventListener("click", () => {
+        filter = filter === category.id ? "alla" : category.id;
+        filterSelect.value = filter;
+        render();
+      });
+      return button;
+    }));
   }
 
   function renderShopping(missing) {
@@ -230,8 +306,9 @@ function createPlanner(container, { session = null } = {}) {
 
   async function save() {
     const rows = items.map(rowForSave);
+    listSettings = { ...listSettings, tripDays };
     const listResult = await supabase.from("packing_lists")
-      .update({ categories, updated_at: new Date().toISOString() })
+      .update({ categories, settings: listSettings, updated_at: new Date().toISOString() })
       .eq("id", listId).eq("user_id", session.user.id);
     let error = listResult.error;
     if (!error && rows.length) {
@@ -266,18 +343,21 @@ function createPlanner(container, { session = null } = {}) {
     if (profile.error) throw profile.error;
 
     let { data: list, error } = await supabase.from("packing_lists")
-      .select("id,name,categories").eq("user_id", userId)
+      .select("id,name,categories,settings").eq("user_id", userId)
       .order("created_at").limit(1).maybeSingle();
     if (error) throw error;
     if (!list) {
       const created = await supabase.from("packing_lists")
-        .insert({ user_id: userId, name: "Min packlista", categories: DEFAULT_CATEGORIES })
-        .select("id,name,categories").single();
+        .insert({ user_id: userId, name: "Min packlista", categories: DEFAULT_CATEGORIES, settings: { tripDays: 6 } })
+        .select("id,name,categories,settings").single();
       if (created.error) throw created.error;
       list = created.data;
     }
     listId = list.id;
     categories = list.categories?.length ? list.categories : DEFAULT_CATEGORIES;
+    listSettings = list.settings || {};
+    tripDays = Math.max(1, Number(listSettings.tripDays) || 6);
+    $("[data-trip-days]", root).value = String(tripDays);
     $(".list-title", root).textContent = list.name;
 
     const stored = await supabase.from("packing_items")
@@ -316,6 +396,17 @@ function createPlanner(container, { session = null } = {}) {
   });
   filterSelect.addEventListener("change", () => {
     filter = filterSelect.value;
+    render();
+  });
+  $("[data-trip-days]", root).addEventListener("change", (event) => {
+    tripDays = Math.min(60, Math.max(1, Number(event.target.value) || 1));
+    event.target.value = String(tripDays);
+    scheduleSave();
+    render();
+  });
+  $("[data-clear-category]", root).addEventListener("click", () => {
+    filter = "alla";
+    filterSelect.value = filter;
     render();
   });
 
