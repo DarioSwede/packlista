@@ -528,6 +528,15 @@ function createPlanner(container, { session = null } = {}) {
     const next = availableLists.find((list) => list.id === nextId);
     if (next) await openList(next);
   });
+  const newListModal = $("[data-new-list-modal]", root);
+  const newListName = $("[data-new-list-name]", root);
+  const newListDays = $("[data-new-list-days]", root);
+  const newListMessage = $("[data-new-list-message]", root);
+  const closeNewListModal = () => {
+    newListModal.hidden = true;
+    newListMessage.textContent = "";
+  };
+
   $("[data-new-list]", root).addEventListener("click", async () => {
     clearTimeout(saveTimer);
     if (listId) await save();
@@ -538,22 +547,59 @@ function createPlanner(container, { session = null } = {}) {
       number += 1;
       newName = `Ny packlista ${number}`;
     }
+    newListName.value = newName;
+    newListDays.value = String(tripDays);
+    newListMessage.textContent = "";
+    newListModal.hidden = false;
+    newListName.focus();
+    newListName.select();
+  });
+
+  $("[data-new-list-cancel]", root).addEventListener("click", closeNewListModal);
+  newListModal.addEventListener("click", (event) => {
+    if (event.target === newListModal) closeNewListModal();
+  });
+  root.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !newListModal.hidden) closeNewListModal();
+  });
+  $("[data-new-list-form]", root).addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const chosenName = newListName.value.trim();
+    const chosenDays = Math.min(60, Math.max(1, Number(newListDays.value) || 1));
+    const nameExists = availableLists.some((list) =>
+      list.name.trim().toLocaleLowerCase("sv-SE") === chosenName.toLocaleLowerCase("sv-SE"));
+    if (!chosenName) {
+      newListMessage.textContent = "Ange ett namn på listan.";
+      newListName.focus();
+      return;
+    }
+    if (nameExists) {
+      newListMessage.textContent = "Namnet används redan · välj ett unikt namn.";
+      newListName.focus();
+      newListName.select();
+      return;
+    }
+    const submitButton = event.currentTarget.querySelector('[type="submit"]');
+    submitButton.disabled = true;
+    newListMessage.textContent = "Skapar listan…";
     const created = await supabase.from("packing_lists")
       .insert({
         user_id: session.user.id,
-        name: newName,
+        name: chosenName,
         categories: DEFAULT_CATEGORIES,
-        settings: { tripDays: 6, targetWeightKg: 10 },
+        settings: { tripDays: chosenDays, targetWeightKg: 10 },
       })
       .select("id,name,categories,settings,created_at").single();
+    submitButton.disabled = false;
     if (created.error) {
-      saveState.textContent = "Kunde inte skapa listan";
+      newListMessage.textContent = created.error.code === "23505"
+        ? "Namnet används redan · välj ett unikt namn."
+        : "Kunde inte skapa listan · försök igen.";
       return;
     }
     availableLists.push(created.data);
+    closeNewListModal();
     await openList(created.data);
-    $("[data-list-name]", root).focus();
-    $("[data-list-name]", root).select();
   });
 
   renderFilters();
