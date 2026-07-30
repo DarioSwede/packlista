@@ -319,7 +319,19 @@ function createPlanner(container, { session = null } = {}) {
     });
     categoryCell.append(select);
 
-    row.insertCell().append(field("number", item.weight, "Vikt i gram", (value) => item.weight = value));
+    const weightCell = row.insertCell();
+    const weightField = document.createElement("div");
+    weightField.className = "weight-field";
+    weightField.append(field("number", item.weight, "Vikt i gram", (value) => item.weight = value));
+    const weighedLabel = document.createElement("label");
+    weighedLabel.className = "weighed-check";
+    weighedLabel.title = "Markera när vikten har kontrollerats på en våg.";
+    weighedLabel.append(
+      field("checkbox", item.weighed, "Kontrollvägd", (value) => item.weighed = value),
+      document.createTextNode("Vägd"),
+    );
+    weightField.append(weighedLabel);
+    weightCell.append(weightField);
     row.insertCell().append(field("number", item.quantity, "Antal", (value) => item.quantity = value));
     row.insertCell().append(field("checkbox", item.owned, "Jag har prylen", (value) => item.owned = value));
     const consumable = field("checkbox", item.consumable, "Förbrukas", (value) => item.consumable = value);
@@ -329,7 +341,6 @@ function createPlanner(container, { session = null } = {}) {
       : "Vikten räknas som förbrukning och minskar jämnt över turens valda antal dagar.";
     row.insertCell().append(consumable);
     row.insertCell().append(field("checkbox", item.worn, "Bärs på kroppen", (value) => item.worn = value));
-    row.insertCell().append(field("checkbox", item.weighed, "Kontrollvägd", (value) => item.weighed = value));
 
     return row;
   }
