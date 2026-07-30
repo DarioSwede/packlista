@@ -41,15 +41,24 @@ button{cursor:pointer}
 .list-switcher{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin-top:12px}
 .list-switcher select,.list-switcher button{min-width:0;border:1px solid var(--line);border-radius:7px;background:#07130d;color:var(--text);padding:7px;font-size:11px}
 .list-switcher button{color:var(--green);white-space:nowrap}
+.list-login-hint{margin:10px 0 0;color:var(--muted);font-size:11px;line-height:1.4}
 .planner-nav{display:grid;gap:6px;margin:26px 0}
 .planner-nav button{display:flex;align-items:center;justify-content:space-between;width:100%;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--text);padding:10px 12px;text-align:left}
 .planner-nav button:hover,.planner-nav button.active{border-color:var(--line);background:#133123}
 .planner-nav span{min-width:23px;border-radius:99px;background:var(--line);padding:2px 7px;color:var(--green);font-size:11px;text-align:center}
-.totals{display:grid;gap:10px;margin-top:30px}
-.totals article{border:1px solid var(--line);border-radius:10px;padding:13px}
-.totals span{display:block;color:var(--muted);font-size:11px;text-transform:uppercase}.totals strong{display:block;margin-top:5px;font-size:20px}
 .save-state{color:var(--muted);font-size:12px}
 .planner-content{min-width:0;padding:24px}
+.top-stats{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:12px;margin:0 0 18px}
+.top-stats article{min-width:0;border:1px solid var(--line);border-radius:13px;background:#10291e;padding:11px 15px;box-shadow:0 12px 28px rgba(0,0,0,.18)}
+.top-stats span,.top-stats label{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
+.top-stats strong{display:block;margin-top:4px;font-size:20px;white-space:nowrap}
+.target-card div{display:flex;align-items:baseline;gap:4px;margin-top:2px}
+.target-card input{width:70px;border:0;border-bottom:1px solid transparent;background:transparent;color:var(--text);padding:0;font-size:20px;font-weight:800}
+.target-card input:hover,.target-card input:focus{outline:0;border-bottom-color:var(--green)}
+.target-card b{font-size:14px}
+.target-card small{display:block;margin-top:3px;color:var(--muted);font-size:10px;white-space:nowrap}
+.target-card.over{border-color:#a96050}.target-card.over small{color:#f2a58e}
+.target-card.under{border-color:#477956}.target-card.under small{color:var(--green)}
 .toolbar{display:grid;grid-template-columns:minmax(180px,1fr) 190px 130px;gap:10px;margin-bottom:16px}
 .toolbar input,.toolbar select,.table-wrap input,.table-wrap select{width:100%;border:1px solid var(--line);border-radius:8px;background:#07130d;color:var(--text);padding:9px}
 .days-control{display:grid;grid-template-columns:1fr 48px;align-items:center;gap:7px;border:1px solid var(--line);border-radius:8px;background:#07130d;padding:0 8px;color:var(--muted);font-size:11px;text-transform:uppercase}
@@ -108,7 +117,7 @@ td input[type=checkbox]:disabled{cursor:not-allowed;opacity:.25}
   .section-heading{display:block}.section-heading>p{margin-top:12px}
   .planner{grid-template-columns:1fr}.planner-sidebar{border-right:0;border-bottom:1px solid var(--line)}
   .planner-nav{grid-template-columns:repeat(3,1fr)}.planner-nav button{justify-content:center;gap:6px;text-align:center}
-  .totals{grid-template-columns:1fr 1fr}.toolbar{grid-template-columns:1fr 1fr}.toolbar .primary-button{grid-column:1/-1}
+  .top-stats{grid-template-columns:repeat(3,1fr)}.toolbar{grid-template-columns:1fr 1fr}.toolbar .primary-button{grid-column:1/-1}
   .insights-grid{grid-template-columns:1fr}
   .view-heading{align-items:flex-start}.print-sheet{min-height:0;padding:32px 24px}
 }
@@ -117,7 +126,7 @@ td input[type=checkbox]:disabled{cursor:not-allowed;opacity:.25}
   .hero h1{font-size:48px}.lead{font-size:17px}.hero-card>strong{font-size:42px}
   .planner-section,.private-main{width:100%;margin-bottom:0}.section-heading{padding:0 12px}
   .planner{border-left:0;border-right:0;border-radius:0}.planner-content{padding:14px 10px}
-  .totals{grid-template-columns:1fr 1fr}.app-header>div span{display:none}
+  .top-stats{grid-template-columns:1fr 1fr;gap:8px}.top-stats article{padding:10px 12px}.target-card{grid-column:1/-1}.app-header>div span{display:none}
   .planner-nav button{padding:9px 5px;font-size:12px}.view-heading{display:block}.view-heading .primary-button{width:100%;margin-top:14px}
   .shopping-item{align-items:flex-start}.print-sheet{padding:24px 14px}.print-summary{display:grid;grid-template-columns:1fr 1fr}
 }

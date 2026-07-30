@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#08140f">
   <meta name="description" content="Skapa en personlig packlista och håll koll på vikten inför nästa vandring.">
   <title>Packlista</title>
-  <link rel="stylesheet" href="styles.css?v=7">
+  <link rel="stylesheet" href="styles.css?v=10">
 </head>
 <body>
   <div id="signed-out">
@@ -91,21 +91,30 @@
             <select data-list-select aria-label="Välj packlista"></select>
             <button data-new-list aria-label="Skapa ny packlista">＋ Ny</button>
           </div>
+          <p class="list-login-hint" data-list-login-hint>Logga in för att skapa och växla mellan flera listor.</p>
         </div>
         <nav class="planner-nav" aria-label="Packlistans vyer">
           <button class="active" data-view-button="packing">Packlista</button>
           <button data-view-button="shopping">Inköp <span data-shopping-badge>0</span></button>
           <button data-view-button="print">A4-utskrift</button>
         </nav>
-        <div class="totals">
-          <article><span>Startvikt</span><strong data-total>0,00 kg</strong></article>
-          <article><span>Grundvikt</span><strong data-base>0,00 kg</strong></article>
-          <article><span>Antal prylar</span><strong data-count>0</strong></article>
-          <article><span>Saknas</span><strong data-missing>0</strong></article>
-        </div>
         <p class="save-state" data-save-state></p>
       </aside>
       <div class="planner-content">
+        <section class="top-stats" aria-label="Viktsammanfattning">
+          <article><span>Startvikt</span><strong data-total>0,00 kg</strong></article>
+          <article><span>Grundvikt</span><strong data-base>0,00 kg</strong></article>
+          <article><span>Vägda</span><strong data-weighed>0/0</strong></article>
+          <article><span>Inköp</span><strong data-missing>0</strong></article>
+          <article class="target-card" data-target-card>
+            <label for="target-weight">Målvikt</label>
+            <div>
+              <input id="target-weight" data-target-weight type="number" min="0" max="100" step="0.1" value="10" aria-label="Målvikt i kilogram">
+              <b>kg</b>
+            </div>
+            <small data-target-status>10,00 kg under mål</small>
+          </article>
+        </section>
         <div data-view="packing">
           <div class="toolbar">
             <input data-search type="search" placeholder="Sök pryl…" aria-label="Sök pryl">
@@ -195,6 +204,7 @@
               <div class="print-summary">
                 <span>Startvikt: <strong data-print-total>0,00 kg</strong></span>
                 <span>Grundvikt: <strong data-print-base>0,00 kg</strong></span>
+                <span>Målvikt: <strong data-print-target>10,00 kg</strong></span>
                 <span>Prylar: <strong data-print-count>0</strong></span>
                 <span>Inköp: <strong data-print-missing>0</strong></span>
               </div>
@@ -212,6 +222,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=9"></script>
+  <script type="module" src="app.js?v=10"></script>
 </body>
 </html>

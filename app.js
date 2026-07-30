@@ -4,18 +4,18 @@ const supabase = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANO
 });
 
 const DEFAULT_CATEGORIES = [
-  { id: "ryggsack", name: "Ryggsäck", icon: "🎒" },
-  { id: "bo", name: "Bo", icon: "⛺" },
-  { id: "sova", name: "Sova", icon: "🛏️" },
-  { id: "mat", name: "Mat", icon: "🍲" },
-  { id: "vatten", name: "Vatten", icon: "💧" },
-  { id: "klader", name: "Kläder", icon: "🥾" },
-  { id: "kok", name: "Kök", icon: "🔥" },
-  { id: "elektronik", name: "Elektronik", icon: "🔋" },
-  { id: "kamera", name: "Kamera", icon: "📷" },
-  { id: "sakerhet", name: "Säkerhet", icon: "🩹" },
-  { id: "ovrigt", name: "Övrigt", icon: "📦" },
-  { id: "bransle", name: "Bränsle", icon: "⛽" },
+  { id: "ryggsack", name: "Ryggsäck", icon: "🎒", color: "#9dcdf7" },
+  { id: "bo", name: "Bo", icon: "⛺", color: "#6ee58c" },
+  { id: "sova", name: "Sova", icon: "🛏️", color: "#5faef7" },
+  { id: "mat", name: "Mat", icon: "🍲", color: "#f2c95f" },
+  { id: "vatten", name: "Vatten", icon: "💧", color: "#60c8f5" },
+  { id: "klader", name: "Kläder", icon: "🥾", color: "#cf9aec" },
+  { id: "kok", name: "Kök", icon: "🔥", color: "#ff9b57" },
+  { id: "elektronik", name: "Elektronik", icon: "🔋", color: "#55d276" },
+  { id: "kamera", name: "Kamera", icon: "📷", color: "#77c9ff" },
+  { id: "sakerhet", name: "Säkerhet", icon: "🩹", color: "#ef6b6b" },
+  { id: "ovrigt", name: "Övrigt", icon: "📦", color: "#a8d4c8" },
+  { id: "bransle", name: "Bränsle", icon: "⛽", color: "#d85f67" },
 ];
 const CONSUMABLE_CATEGORIES = new Set(["mat", "vatten", "bransle"]);
 
@@ -33,6 +33,7 @@ function createPlanner(container, { session = null } = {}) {
   let query = "";
   let filter = "alla";
   let tripDays = 6;
+  let targetWeightKg = 10;
   let listSettings = {};
   let availableLists = [];
   let saveTimer = null;
@@ -65,15 +66,25 @@ function createPlanner(container, { session = null } = {}) {
 
     $("[data-total]", root).textContent = kg(total);
     $("[data-base]", root).textContent = kg(total - consumable);
-    $("[data-count]", root).textContent = String(items.length);
+    const weighedCount = items.filter((item) => item.weighed).length;
+    $("[data-weighed]", root).textContent = `${weighedCount}/${items.length}`;
     const missing = items.filter((item) => !item.owned);
     $("[data-missing]", root).textContent = String(missing.length);
     $("[data-shopping-badge]", root).textContent = String(missing.length);
     empty.hidden = items.length > 0;
     tbody.replaceChildren(...visible.map(itemRow));
     renderInsights(total, consumable);
+    renderTarget(total);
     renderShopping(missing);
     renderPrint(total, total - consumable, missing.length);
+  }
+
+  function renderTarget(total) {
+    const difference = (targetWeightKg * 1000) - total;
+    const card = $("[data-target-card]", root);
+    card.classList.toggle("over", difference < 0);
+    card.classList.toggle("under", difference >= 0);
+    $("[data-target-status]", root).textContent = `${kg(Math.abs(difference))} ${difference < 0 ? "över" : "under"} mål`;
   }
 
   function categoryName(id) {
@@ -121,15 +132,15 @@ function createPlanner(container, { session = null } = {}) {
     forecast.replaceChildren(svg);
     $("[data-forecast-caption]", root).textContent = consumable
       ? `Dag 1: ${kg(total)} → Dag ${days}: ${kg(endWeight)} · jämn förbrukning över dagarna.`
-      : `Markera mat, bränsle och annat som “Förbrukas” för att se hur vikten minskar.`;
+      : `Markera mat, vatten eller bränsle som “Förbrukas” för att se hur vikten minskar.`;
 
     const grouped = categories.map((category) => ({
       ...category,
       weight: items.filter((item) => item.category === category.id).reduce((sum, item) => sum + itemTotal(item), 0),
-    })).filter((category) => category.weight > 0).sort((a, b) => b.weight - a.weight);
+    }));
     const maxWeight = Math.max(1, ...grouped.map((category) => category.weight));
     const chart = $("[data-category-chart]", root);
-    $("[data-category-empty]", root).hidden = grouped.length > 0;
+    $("[data-category-empty]", root).hidden = true;
     $("[data-clear-category]", root).hidden = filter === "alla";
     chart.replaceChildren(...grouped.map((category) => {
       const button = document.createElement("button");
@@ -140,7 +151,8 @@ function createPlanner(container, { session = null } = {}) {
       name.textContent = `${category.icon || ""} ${category.name}`.trim();
       const track = document.createElement("i");
       const fill = document.createElement("b");
-      fill.style.width = `${Math.max(3, (category.weight / maxWeight) * 100)}%`;
+      fill.style.width = category.weight ? `${(category.weight / maxWeight) * 100}%` : "0";
+      fill.style.background = category.color || "var(--green)";
       track.append(fill);
       const weight = document.createElement("strong");
       weight.textContent = kg(category.weight);
@@ -184,6 +196,7 @@ function createPlanner(container, { session = null } = {}) {
     $("[data-print-title]", root).textContent = $("[data-list-name]", root).value || "Min packlista";
     $("[data-print-total]", root).textContent = kg(total);
     $("[data-print-base]", root).textContent = kg(base);
+    $("[data-print-target]", root).textContent = kg(targetWeightKg * 1000);
     $("[data-print-count]", root).textContent = String(items.length);
     $("[data-print-missing]", root).textContent = String(missingCount);
     $("[data-print-empty]", root).hidden = items.length > 0;
@@ -334,7 +347,7 @@ function createPlanner(container, { session = null } = {}) {
 
   async function save() {
     const rows = items.map(rowForSave);
-    listSettings = { ...listSettings, tripDays };
+    listSettings = { ...listSettings, tripDays, targetWeightKg };
     const listName = $("[data-list-name]", root).value.trim() || "Min packlista";
     const listResult = await supabase.from("packing_lists")
       .update({ name: listName, categories, settings: listSettings, updated_at: new Date().toISOString() })
@@ -358,13 +371,20 @@ function createPlanner(container, { session = null } = {}) {
       selectedList.name = listName;
       renderListSwitcher();
     }
-    saveState.textContent = error ? "Kunde inte spara" : "Sparad ✓";
+    saveState.textContent = error?.code === "23505"
+      ? "Namnet används redan · välj ett unikt namn"
+      : error ? "Kunde inte spara" : "Sparad ✓";
   }
 
   function mergedCategories(stored = []) {
     return DEFAULT_CATEGORIES.map((fallback) => {
       const match = stored.find((category) => category.id === fallback.id);
-      return { ...fallback, ...match, icon: match?.icon || fallback.icon };
+      return {
+        ...fallback,
+        ...match,
+        icon: match?.icon || fallback.icon,
+        color: match?.color || fallback.color,
+      };
     });
   }
 
@@ -384,7 +404,9 @@ function createPlanner(container, { session = null } = {}) {
     categories = mergedCategories(list.categories);
     listSettings = list.settings || {};
     tripDays = Math.max(1, Number(listSettings.tripDays) || 6);
+    targetWeightKg = Math.max(0, Number(listSettings.targetWeightKg) || 10);
     root.querySelectorAll("[data-trip-days]").forEach((input) => input.value = String(tripDays));
+    $("[data-target-weight]", root).value = String(targetWeightKg);
     $("[data-list-name]", root).value = list.name;
     filter = "alla";
     query = "";
@@ -429,12 +451,13 @@ function createPlanner(container, { session = null } = {}) {
     availableLists = result.data;
     if (!availableLists.length) {
       const created = await supabase.from("packing_lists")
-        .insert({ user_id: userId, name: "Min packlista", categories: DEFAULT_CATEGORIES, settings: { tripDays: 6 } })
+        .insert({ user_id: userId, name: "Min packlista", categories: DEFAULT_CATEGORIES, settings: { tripDays: 6, targetWeightKg: 10 } })
         .select("id,name,categories,settings,created_at").single();
       if (created.error) throw created.error;
       availableLists = [created.data];
     }
     $("[data-list-switcher]", root).hidden = false;
+    $("[data-list-login-hint]", root).hidden = true;
     await openList(availableLists[0]);
   }
 
@@ -474,6 +497,11 @@ function createPlanner(container, { session = null } = {}) {
       render();
     });
   });
+  $("[data-target-weight]", root).addEventListener("input", (event) => {
+    targetWeightKg = Math.min(100, Math.max(0, Number(event.target.value) || 0));
+    scheduleSave();
+    render();
+  });
   $("[data-clear-category]", root).addEventListener("click", () => {
     filter = "alla";
     filterSelect.value = filter;
@@ -494,13 +522,19 @@ function createPlanner(container, { session = null } = {}) {
   $("[data-new-list]", root).addEventListener("click", async () => {
     clearTimeout(saveTimer);
     if (listId) await save();
-    const number = availableLists.length + 1;
+    const usedNames = new Set(availableLists.map((list) => list.name.trim().toLocaleLowerCase("sv-SE")));
+    let number = 1;
+    let newName = "Ny packlista";
+    while (usedNames.has(newName.toLocaleLowerCase("sv-SE"))) {
+      number += 1;
+      newName = `Ny packlista ${number}`;
+    }
     const created = await supabase.from("packing_lists")
       .insert({
         user_id: session.user.id,
-        name: `Ny packlista ${number}`,
+        name: newName,
         categories: DEFAULT_CATEGORIES,
-        settings: { tripDays: 6 },
+        settings: { tripDays: 6, targetWeightKg: 10 },
       })
       .select("id,name,categories,settings,created_at").single();
     if (created.error) {
