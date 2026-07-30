@@ -220,9 +220,27 @@ function createPlanner(container, { session = null } = {}) {
       const meta = document.createElement("span");
       meta.textContent = `${categoryName(item.category)} · ${item.quantity} st · ${item.weight || 0} g`;
       info.append(name, meta);
+      const note = document.createElement("textarea");
+      note.className = "shopping-note";
+      note.rows = 2;
+      note.maxLength = 500;
+      note.placeholder = "Notering, till exempel butik, storlek eller modell…";
+      note.value = item.note || "";
+      note.setAttribute("aria-label", `Notering för ${item.name || "pryl"}`);
+      note.addEventListener("input", () => {
+        item.note = note.value;
+        scheduleSave();
+        renderPrint(
+          items.reduce((sum, candidate) => sum + itemTotal(candidate), 0),
+          items.reduce((sum, candidate) => sum + itemTotal(candidate), 0)
+            - items.filter((candidate) => candidate.consumable && CONSUMABLE_CATEGORIES.has(candidate.category))
+              .reduce((sum, candidate) => sum + itemTotal(candidate), 0),
+          missing.length,
+        );
+      });
       const label = document.createElement("label");
       label.append(check, document.createTextNode(" Inköpt"));
-      row.append(info, label);
+      row.append(info, note, label);
       return row;
     }));
   }

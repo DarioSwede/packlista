@@ -112,9 +112,11 @@ td input[type=checkbox]:disabled{cursor:not-allowed;opacity:.25}
 .view-heading h2{margin:0;font-family:Georgia,serif;font-size:34px;font-weight:500}
 .view-heading p:not(.eyebrow){margin:8px 0 0;color:var(--muted)}
 .shopping-list{display:grid;gap:8px}
-.shopping-item{display:flex;align-items:center;justify-content:space-between;gap:18px;border:1px solid var(--line);border-radius:10px;background:#0a1710;padding:14px 16px}
+.shopping-item{display:grid;grid-template-columns:minmax(170px,.8fr) minmax(240px,1.2fr) auto;align-items:center;gap:18px;border:1px solid var(--line);border-radius:10px;background:#0a1710;padding:14px 16px}
 .shopping-item strong,.shopping-item span{display:block}.shopping-item span{margin-top:4px;color:var(--muted);font-size:12px}
 .shopping-item label{white-space:nowrap;color:var(--green);font-size:13px}.shopping-item input{margin-right:5px}
+.shopping-note{width:100%;min-height:48px;resize:vertical;border:1px solid var(--line);border-radius:8px;background:#07130d;color:var(--text);padding:9px 10px;font:inherit;font-size:13px;line-height:1.35}
+.shopping-note:focus{border-color:var(--green);outline:2px solid rgba(149,226,136,.16)}
 .print-sheet{width:min(794px,100%);min-height:1123px;margin:auto;background:#fff;color:#182019;padding:56px 60px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
 .print-sheet header{margin-bottom:24px}.print-sheet header>p{margin:0 0 8px;color:#52705e;font-size:10px;font-weight:800;letter-spacing:.18em}
 .print-sheet h1{margin:0;font-family:Georgia,serif;font-size:32px}.print-summary{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:14px;font-size:12px}
@@ -139,6 +141,10 @@ td input[type=checkbox]:disabled{cursor:not-allowed;opacity:.25}
 @media(max-width:1200px){
   .packing-workspace{grid-template-columns:1fr}
   .insights-grid{position:static;grid-template-columns:1fr 1fr}
+}
+@media(max-width:700px){
+  .shopping-item{grid-template-columns:1fr auto}
+  .shopping-note{grid-column:1/-1;grid-row:2}
 }
 @media(max-width:800px){
   .hero{grid-template-columns:1fr;gap:48px;min-height:0;padding:70px 0}.hero-card{max-width:520px}
