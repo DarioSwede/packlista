@@ -443,12 +443,16 @@ function createPlanner(container, { session = null } = {}) {
     }
 
     const userId = session.user.id;
-    const profile = await supabase.from("users").upsert({
-      id: userId,
-      display_name: session.user.email.split("@")[0],
-      updated_at: new Date().toISOString(),
-    });
+    const profile = await supabase.from("users").select("id").eq("id", userId).maybeSingle();
     if (profile.error) throw profile.error;
+    if (!profile.data) {
+      const createdProfile = await supabase.from("users").insert({
+        id: userId,
+        display_name: session.user.email.split("@")[0],
+        updated_at: new Date().toISOString(),
+      });
+      if (createdProfile.error) throw createdProfile.error;
+    }
 
     const result = await supabase.from("packing_lists")
       .select("id,name,categories,settings,created_at").eq("user_id", userId).order("created_at");
