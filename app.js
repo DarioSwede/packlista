@@ -135,8 +135,38 @@ function createPlanner(container, { session = null } = {}) {
       svg.append(dot);
     });
     forecast.replaceChildren(svg);
+    const summary = $("[data-forecast-summary]", root);
+    const summaryValues = [
+      ["Startvikt", kg(total)],
+      ["Förbrukas", kg(consumable)],
+      [`Dag ${days}`, kg(endWeight)],
+    ];
+    summary.replaceChildren(...summaryValues.map(([label, value]) => {
+      const metric = document.createElement("div");
+      const caption = document.createElement("span");
+      caption.textContent = label;
+      const amount = document.createElement("strong");
+      amount.textContent = value;
+      metric.append(caption, amount);
+      return metric;
+    }));
+
+    const dayList = $("[data-forecast-days]", root);
+    dayList.replaceChildren(...points.map((weight, index) => {
+      const day = document.createElement("div");
+      if (index === 0) day.classList.add("first");
+      if (index === points.length - 1) day.classList.add("last");
+      const label = document.createElement("span");
+      label.textContent = `Dag ${index + 1}`;
+      const amount = document.createElement("strong");
+      amount.textContent = kg(weight);
+      day.append(label, amount);
+      return day;
+    }));
+
+    const dailyReduction = days > 1 ? consumable / (days - 1) : 0;
     $("[data-forecast-caption]", root).textContent = consumable
-      ? `Dag 1: ${kg(total)} → Dag ${days}: ${kg(endWeight)} · jämn förbrukning över dagarna.`
+      ? `${kg(dailyReduction)} lättare per dag från dag 1 till dag ${days}.`
       : `Markera mat, vatten eller bränsle som “Förbrukas” för att se hur vikten minskar.`;
 
     const grouped = categories.map((category) => ({
@@ -253,7 +283,23 @@ function createPlanner(container, { session = null } = {}) {
   function itemRow(item) {
     const row = document.createElement("tr");
     const nameCell = row.insertCell();
-    nameCell.append(field("text", item.name, "Artikel", (value) => item.name = value));
+    const nameWrap = document.createElement("div");
+    nameWrap.className = "item-name-field";
+    nameWrap.append(field("text", item.name, "Artikel", (value) => item.name = value));
+    const remove = document.createElement("button");
+    remove.className = "delete-button";
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.title = "Ta bort prylen";
+    remove.setAttribute("aria-label", `Ta bort ${item.name || "pryl"}`);
+    remove.addEventListener("click", () => {
+      deletedIds.add(item.id);
+      items = items.filter((candidate) => candidate.id !== item.id);
+      scheduleSave();
+      render();
+    });
+    nameWrap.append(remove);
+    nameCell.append(nameWrap);
 
     const categoryCell = row.insertCell();
     const select = document.createElement("select");
@@ -285,18 +331,6 @@ function createPlanner(container, { session = null } = {}) {
     row.insertCell().append(field("checkbox", item.worn, "Bärs på kroppen", (value) => item.worn = value));
     row.insertCell().append(field("checkbox", item.weighed, "Kontrollvägd", (value) => item.weighed = value));
 
-    const deleteCell = row.insertCell();
-    const remove = document.createElement("button");
-    remove.className = "delete-button";
-    remove.textContent = "×";
-    remove.setAttribute("aria-label", `Ta bort ${item.name || "pryl"}`);
-    remove.addEventListener("click", () => {
-      deletedIds.add(item.id);
-      items = items.filter((candidate) => candidate.id !== item.id);
-      scheduleSave();
-      render();
-    });
-    deleteCell.append(remove);
     return row;
   }
 
