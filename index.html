@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#08140f">
   <meta name="description" content="Skapa en personlig packlista och håll koll på vikten inför nästa vandring.">
   <title>Packlista</title>
-  <link rel="stylesheet" href="styles.css?v=19">
+  <link rel="stylesheet" href="styles.css?v=20">
 </head>
 <body>
   <div id="signed-out">
@@ -98,6 +98,32 @@
           <button data-view-button="shopping">Inköp <span data-shopping-badge>0</span></button>
           <button data-view-button="print">A4-utskrift</button>
         </nav>
+        <aside class="insights-grid sidebar-insights" data-view="packing" aria-label="Viktanalys och kategorifilter">
+          <section class="insight-card forecast-card">
+            <div class="insight-heading">
+              <div>
+                <p class="eyebrow">Viktprognos</p>
+                <h3>Packvikten dag för dag</h3>
+              </div>
+              <label title="Antal dagar används i viktprognosen.">Dagar <input data-trip-days type="number" min="1" max="60" value="6" aria-label="Antal dagar i viktprognosen"></label>
+            </div>
+            <div class="forecast-summary" data-forecast-summary></div>
+            <div class="forecast-chart" data-forecast-chart></div>
+            <div class="forecast-days" data-forecast-days aria-label="Vikt per dag"></div>
+            <p class="forecast-caption" data-forecast-caption></p>
+          </section>
+          <section class="insight-card">
+            <div class="insight-heading">
+              <div>
+                <p class="eyebrow">Vikt per kategori</p>
+                <h3>Klicka för att filtrera listan</h3>
+              </div>
+              <button class="clear-filter" data-clear-category hidden>Visa alla</button>
+            </div>
+            <div class="category-chart" data-category-chart></div>
+            <div class="empty-insight" data-category-empty>Vikter per kategori visas när du lagt till prylar.</div>
+          </section>
+        </aside>
         <p class="save-state" data-save-state></p>
       </aside>
       <div class="planner-content">
@@ -146,32 +172,6 @@
               </div>
               <button class="primary-button add-bottom" data-add>+ Lägg till pryl</button>
             </div>
-            <aside class="insights-grid" aria-label="Viktanalys och kategorifilter">
-              <section class="insight-card forecast-card">
-                <div class="insight-heading">
-                  <div>
-                    <p class="eyebrow">Viktprognos</p>
-                    <h3>Packvikten dag för dag</h3>
-                  </div>
-                  <label title="Antal dagar används i viktprognosen.">Dagar <input data-trip-days type="number" min="1" max="60" value="6" aria-label="Antal dagar i viktprognosen"></label>
-                </div>
-                <div class="forecast-summary" data-forecast-summary></div>
-                <div class="forecast-chart" data-forecast-chart></div>
-                <div class="forecast-days" data-forecast-days aria-label="Vikt per dag"></div>
-                <p class="forecast-caption" data-forecast-caption></p>
-              </section>
-              <section class="insight-card">
-                <div class="insight-heading">
-                  <div>
-                    <p class="eyebrow">Vikt per kategori</p>
-                    <h3>Klicka för att filtrera listan</h3>
-                  </div>
-                  <button class="clear-filter" data-clear-category hidden>Visa alla</button>
-                </div>
-                <div class="category-chart" data-category-chart></div>
-                <div class="empty-insight" data-category-empty>Vikter per kategori visas när du lagt till prylar.</div>
-              </section>
-            </aside>
           </div>
         </div>
 

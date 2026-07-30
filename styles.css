@@ -34,7 +34,7 @@ button{cursor:pointer}
 .section-heading{display:flex;align-items:end;justify-content:space-between;gap:30px;margin-bottom:20px}
 .section-heading h2{margin:0;font-family:Georgia,serif;font-size:38px;font-weight:500}
 .section-heading>p{max-width:520px;margin:0;color:var(--muted);line-height:1.5}
-.planner{position:relative;display:grid;grid-template-columns:260px minmax(0,1fr);min-height:620px;border:1px solid var(--line);border-radius:20px;overflow:visible;background:#0b1b13;box-shadow:0 20px 70px rgba(0,0,0,.22)}
+.planner{position:relative;display:grid;grid-template-columns:340px minmax(0,1fr);min-height:620px;border:1px solid var(--line);border-radius:20px;overflow:visible;background:#0b1b13;box-shadow:0 20px 70px rgba(0,0,0,.22)}
 .planner-sidebar{padding:28px 22px;border-right:1px solid var(--line);border-radius:20px 0 0 20px;background:#0a1710}
 .list-title{width:100%;border:0;border-bottom:1px solid transparent;background:transparent;color:var(--text);padding:3px 0;font-size:22px;font-weight:800}
 .list-title:hover,.list-title:focus{outline:0;border-color:var(--green)}
@@ -64,9 +64,13 @@ button{cursor:pointer}
 .days-control{display:grid;grid-template-columns:1fr 48px;align-items:center;gap:7px;border:1px solid var(--line);border-radius:8px;background:#07130d;padding:0 8px;color:var(--muted);font-size:11px;text-transform:uppercase}
 .days-control input{border:0;padding:8px 2px;text-align:center}
 .add-bottom{width:100%;margin-top:12px}
-.packing-workspace{display:grid;grid-template-columns:minmax(0,1fr) minmax(310px,360px);align-items:start;gap:14px}
+.packing-workspace{display:grid;grid-template-columns:minmax(0,1fr);align-items:start}
 .packing-main{min-width:0}
 .insights-grid{position:sticky;top:14px;display:grid;grid-template-columns:1fr;gap:14px;margin:0}
+.sidebar-insights{position:static;margin-top:18px}
+.sidebar-insights .insight-card{padding:14px}
+.sidebar-insights .forecast-chart{height:105px}
+.sidebar-insights .forecast-days{grid-template-columns:repeat(3,1fr)}
 .insight-card{min-width:0;border:1px solid var(--line);border-radius:12px;background:#0d2117;padding:18px}
 .insight-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
 .insight-heading .eyebrow{margin-bottom:6px}.insight-heading h3{margin:0;font-size:16px}
@@ -139,8 +143,7 @@ td input[type=checkbox]:disabled{cursor:not-allowed;opacity:.25}
 .new-list-card input{width:100%;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;background:#07130d;color:var(--text);padding:11px}
 .new-list-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
 @media(max-width:1200px){
-  .packing-workspace{grid-template-columns:1fr}
-  .insights-grid{position:static;grid-template-columns:1fr 1fr}
+  .planner{grid-template-columns:300px minmax(0,1fr)}
 }
 @media(max-width:700px){
   .shopping-item{grid-template-columns:1fr auto}
@@ -152,7 +155,7 @@ td input[type=checkbox]:disabled{cursor:not-allowed;opacity:.25}
   .planner{grid-template-columns:1fr}.planner-sidebar{border-right:0;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
   .planner-nav{grid-template-columns:repeat(3,1fr)}.planner-nav button{justify-content:center;gap:6px;text-align:center}
   .planner-content{padding:14px}.top-stats{grid-template-columns:repeat(3,1fr);margin-bottom:18px;transform:none}.toolbar{grid-template-columns:1fr 1fr}.toolbar .primary-button{grid-column:1/-1}
-  .insights-grid{grid-template-columns:1fr}
+  .sidebar-insights{margin-top:16px}
   .view-heading{align-items:flex-start}.print-sheet{min-height:0;padding:32px 24px}
 }
 @media(max-width:480px){
