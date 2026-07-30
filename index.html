@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#08140f">
   <meta name="description" content="Skapa en personlig packlista och håll koll på vikten inför nästa vandring.">
   <title>Packlista</title>
-  <link rel="stylesheet" href="styles.css?v=18">
+  <link rel="stylesheet" href="styles.css?v=19">
 </head>
 <body>
   <div id="signed-out">
@@ -133,7 +133,6 @@
                       <th>Artikel</th><th>Kategori</th><th><abbr title="Ange vikten i gram och markera Vägd när den har kontrollerats på en våg.">Vikt (gram) / Vägd ⓘ</abbr></th><th>Antal</th>
                       <th><abbr title="Markera om du redan har artikeln. Artiklar utan markering visas i inköpslistan.">Har ⓘ</abbr></th>
                       <th><abbr title="För Mat, Vatten och Bränsle. Vikten fördelas som förbrukning över turens valda antal dagar.">Förbrukas ⓘ</abbr></th>
-                      <th><abbr title="Markera om artikeln bärs på kroppen och därför inte ska räknas i ryggsäckens vikt.">På mig ⓘ</abbr></th>
                     </tr>
                   </thead>
                   <tbody data-items-body></tbody>
@@ -215,7 +214,7 @@
               </div>
             </header>
             <table class="print-table">
-              <thead><tr><th>✓</th><th>Artikel</th><th>Kategori</th><th>Vikt</th><th>Antal</th><th>På mig</th><th>Kontrollvägd</th><th>Notering</th></tr></thead>
+              <thead><tr><th>✓</th><th>Artikel</th><th>Kategori</th><th>Vikt</th><th>Antal</th><th>Kontrollvägd</th><th>Notering</th></tr></thead>
               <tbody data-print-body></tbody>
             </table>
             <div class="print-empty" data-print-empty>Listan är tom.</div>
@@ -244,6 +243,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=16"></script>
+  <script type="module" src="app.js?v=17"></script>
 </body>
 </html>

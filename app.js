@@ -55,8 +55,7 @@ function createPlanner(container, { session = null } = {}) {
   let activeView = "packing";
 
   function itemTotal(item) {
-    const packedQuantity = Math.max(0, item.quantity - (item.worn ? 1 : 0));
-    return item.weight * packedQuantity;
+    return item.weight * item.quantity;
   }
 
   function render() {
@@ -261,7 +260,6 @@ function createPlanner(container, { session = null } = {}) {
         categoryName(item.category),
         `${item.weight || 0} g`,
         String(item.quantity),
-        item.worn ? "✓" : "",
         item.weighed ? "✓" : "",
         item.owned ? item.note : `INKÖP${item.note ? ` · ${item.note}` : ""}`,
       ];
@@ -358,7 +356,6 @@ function createPlanner(container, { session = null } = {}) {
       ? "Förbrukning kan endast användas för Mat, Vatten och Bränsle."
       : "Vikten räknas som förbrukning och minskar jämnt över turens valda antal dagar.";
     row.insertCell().append(consumable);
-    row.insertCell().append(field("checkbox", item.worn, "Bärs på kroppen", (value) => item.worn = value));
 
     return row;
   }
@@ -395,7 +392,7 @@ function createPlanner(container, { session = null } = {}) {
       quantity: Math.round(item.quantity),
       owned: item.owned,
       consumable: item.consumable,
-      worn: item.worn,
+      worn: false,
       weighed: item.weighed,
       note: item.note,
       sort_order: index,
@@ -488,6 +485,7 @@ function createPlanner(container, { session = null } = {}) {
     items = stored.data.map((item) => ({
       ...item,
       id: item.client_id,
+      worn: false,
       consumable: item.consumable && CONSUMABLE_CATEGORIES.has(item.category),
     }));
     saveState.textContent = "Sparad ✓";

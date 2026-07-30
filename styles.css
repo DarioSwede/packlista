@@ -96,7 +96,7 @@ th{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase}
 th abbr{text-decoration:none;cursor:help}
 .table-wrap th:first-child,.table-wrap td:first-child{position:sticky;left:0;z-index:2;min-width:190px;background:#0a1911;box-shadow:1px 0 0 var(--line)}
 .table-wrap th:first-child{z-index:3}
-td:nth-child(n+5):nth-child(-n+7){text-align:center}td input[type=checkbox]{width:auto}
+td:nth-child(n+5):nth-child(-n+6){text-align:center}td input[type=checkbox]{width:auto}
 td input[type=checkbox]:disabled{cursor:not-allowed;opacity:.25}
 .item-name-field{display:grid;grid-template-columns:minmax(105px,1fr) 31px;align-items:center;gap:6px}
 .weight-field{display:grid;grid-template-columns:minmax(86px,1fr) auto;align-items:center;gap:7px}
