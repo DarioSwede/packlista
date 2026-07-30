@@ -1,6 +1,11 @@
 const cfg = window.PACKLISTA_CONFIG;
 const supabase = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
-  auth: { experimental: { passkey: true } },
+  auth: {
+    // Packlista and Tor-dash share an origin and Supabase project. A dedicated
+    // storage key keeps their sessions from signing each other in or out.
+    storageKey: "packlista-auth-token",
+    experimental: { passkey: true },
+  },
 });
 
 const DEFAULT_CATEGORIES = [
