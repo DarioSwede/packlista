@@ -490,8 +490,10 @@ function createPlanner(container, { session = null } = {}) {
       // Plain bold letter, not an emoji, on purpose -- 🍴 (fork and knife)
       // renders as unreadable tofu/fallback glyphs on systems without a
       // full color-emoji font (seen live on Tor's machine as a "‖"-looking
-      // shape). "F"/"P"/★ below all render identically everywhere since
+      // shape). "F"/"B"/★ below all render identically everywhere since
       // they're either plain text or an old, widely-supported symbol.
+      // "B" (not "P") matches the first letter of "Bärs", the word the
+      // label/tooltip actually leads with.
       actionToggle("F", "Förbrukas", item.consumable, () => { item.consumable = !item.consumable; }, {
         disabled: !consumableAllowed,
         title: !consumableAllowed
@@ -500,7 +502,7 @@ function createPlanner(container, { session = null } = {}) {
             ? "Förbrukas -- vikten minskar jämnt över turens valda antal dagar. Klicka för att avmarkera."
             : "Markera som förbrukas (mat, vatten, bränsle).",
       }),
-      actionToggle("P", "Bärs på kroppen", item.worn, () => { item.worn = !item.worn; }, {
+      actionToggle("B", "Bärs på kroppen", item.worn, () => { item.worn = !item.worn; }, {
         title: item.worn
           ? "Bärs på kroppen -- ett set räknas inte i packvikten. Klicka för att avmarkera."
           : "Markera om ett set av den här prylen bärs på kroppen istället för i packningen.",

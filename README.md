@@ -95,17 +95,22 @@ förut, eftersom det är vad som faktiskt hamnar på papperet.
 
 `Förbrukas`-kryssrutan (tidigare en egen tabellkolumn) är borttagen.
 Den, `Bärs på kroppen` och den nya `Favorit`-flaggan styrs nu istället av
-tre små ikonknappar (🍴/👕/★) som ligger i namncellen på varje rad, dolda
+tre små ikonknappar (F/B/★) som ligger i namncellen på varje rad, dolda
 tills raden hovras eller en av knapparna har tangentbordsfokus (se
 `.item-actions`/`.item-action` i `styles.css` och `actionToggle()`/
 `itemRow()` i `app.js`). Knapparna är riktiga `<button>`-element hela
 tiden — bara `opacity`/`pointer-events` växlar — så Tab-ordningen och
-skärmläsare påverkas inte av att de är visuellt gömda.
+skärmläsare påverkas inte av att de är visuellt gömda. Bokstäverna är
+vanlig fet text, inte emoji — 🍴/👕 renderade som oläsliga tofu-glyfer på
+system utan ett fullständigt färgemoji-typsnitt (såg det live på Tors
+maskin), så F/B/★ används istället (★ är en vanlig, brett stödd
+Unicode-symbol, inget emoji). B (inte P, som det hette innan) matchar
+första bokstaven i "Bärs".
 
-- **Förbrukas** (🍴): oförändrad logik, bara flyttad. Fortfarande
+- **Förbrukas** (F): oförändrad logik, bara flyttad. Fortfarande
   begränsad till Mat/Vatten/Bränsle (`CONSUMABLE_CATEGORIES`), fortfarande
   det som driver viktprognosen.
-- **Bärs på kroppen** (👕): detta fanns tidigare som en egen tabellkolumn
+- **Bärs på kroppen** (B): detta fanns tidigare som en egen tabellkolumn
   och togs bort i commit `461d61e` ("Remove worn item option"). Samma
   gamla räknelogik är tillbaka i `itemTotal()`: exakt **ett** set av
   prylen räknas bort från packvikten, oavsett `quantity` — tre par
