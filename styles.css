@@ -346,7 +346,17 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
      the same divider moves to border-top instead, still separating name
      from the field group above it. */
   .table-wrap th:first-child,.table-wrap td:first-child{position:static;min-width:0;background:transparent;box-shadow:none;padding-top:5px;border-top:1px solid var(--line)}
-  td[data-label]::before{content:attr(data-label);display:block;margin-bottom:3px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+  /* [data-label], not td[data-label] -- Vikt and Vägd now each carry
+     their own data-label on a wrapper *inside* weightCell (.weight-
+     input-wrap / .vagd-wrap, see itemRow()) instead of one shared
+     data-label on the td covering both. Two independent ::before
+     headers, each sitting directly above its own element, is what
+     actually puts "VÄGD" on the exact same header line as Kategori/
+     Antal/Vikt -- the previous column-reverse-inside-one-shared-cell
+     approach could only ever approximate that, since Vägd's checkbox
+     lived one nesting level deeper than the other three fields' own
+     tds. */
+  [data-label]::before{content:attr(data-label);display:block;margin-bottom:3px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
   /* Har went back to an inline "Har" label next to its checkbox (see
      itemRow()'s .mobile-only-text span) instead of this pseudo-heading
      -- showing both would be the same word twice again. */
@@ -357,24 +367,21 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
      the earlier bug where a select's own auto-sizing (by its widest
      option, ignoring the td it sat in) bled into the next cell. */
   td[data-label="Antal"] input{width:100%}
-  td[data-label="Vikt"] input{width:100%;min-width:0}
+  .weight-input-wrap input{width:100%;min-width:0}
   td[data-label="Kategori"] select{width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis}
   /* Vikt (25) and Vägd (10) split td:nth-child(3)'s 35% share 5:2
      (=25:10) via the same flex-grow-ratio approach as the outer row,
      so the split holds regardless of how wide that td ends up being.
-     Overrides the desktop .weight-field's minmax(86px,1fr) column. */
-  .weight-field{grid-template-columns:5fr 2fr;column-gap:5px;align-items:end}
-  /* Vägd's text moves from beside its checkbox to above it, matching
-     Kategori/Antal/Vikt's label-above-control pattern so all four read
-     as one header row -- column-reverse displays the *last* DOM child
-     first without touching itemRow() (the checkbox is appended before
-     the "Vägd" text node there, for the desktop row-layout order).
-     Typography copied from td[data-label]::before above so it actually
-     reads as part of the same header band, not a smaller aside. */
-  .weight-field .weighed-check{
-    min-width:0;flex-direction:column-reverse;align-items:flex-start;row-gap:3px;
-    font-size:10px;text-transform:uppercase;letter-spacing:.05em;
-  }
+     Overrides the desktop .weight-field's minmax(86px,1fr) column.
+     align-items:start (not the desktop default center) since both
+     columns now build their own label-above-control stack and should
+     line up at the top, like Kategori/Antal do. */
+  .weight-field{grid-template-columns:5fr 2fr;column-gap:5px;align-items:start}
+  .vagd-wrap{min-width:0}
+  /* The inline "Vägd" text next to the checkbox is desktop-only now --
+     on mobile, .vagd-wrap's own "VÄGD" pseudo-heading (above) says it
+     instead, so showing this too would repeat it. */
+  .weighed-check-label{display:none}
   td:nth-child(5){display:flex;align-items:center;text-align:left}
 }
 /* Hover-revealed item-action buttons (Förbrukas/Bärs på kroppen/Favorit,

@@ -548,9 +548,20 @@ function createPlanner(container, { session = null } = {}) {
     categoryCell.append(select);
 
     const weightCell = row.insertCell();
-    weightCell.dataset.label = "Vikt";
     const weightField = document.createElement("div");
     weightField.className = "weight-field";
+    // Vikt and Vägd each get their own wrapper with its own data-label,
+    // instead of one data-label on weightCell covering both -- that was
+    // one ::before floating above the whole pair, which couldn't line up
+    // with Vägd specifically since Vägd sits in its own grid column
+    // below (see .weight-field's 5fr/2fr split in styles.css). Two
+    // wrappers means two independent [data-label]::before headers, each
+    // sitting directly above its own column's content, so Vikt and Vägd
+    // end up on the exact same header line as Kategori/Antal -- not an
+    // approximation via flex tricks.
+    const weightInputWrap = document.createElement("div");
+    weightInputWrap.className = "weight-input-wrap";
+    weightInputWrap.dataset.label = "Vikt";
     const weightInput = field("number", item.weight, "Vikt i gram", (value) => item.weight = value);
     // 9999 g (~10 kg) is comfortably past anything one packing item weighs
     // on its own -- capping it lets the mobile card give this field a
@@ -563,15 +574,27 @@ function createPlanner(container, { session = null } = {}) {
     // the "VIKT" pseudo-heading above the field already says what it is,
     // no need to repeat the unit inside the box too).
     if (item.weight === 0) weightInput.value = "";
-    weightField.append(weightInput);
+    weightInputWrap.append(weightInput);
+    weightField.append(weightInputWrap);
+    const vagdWrap = document.createElement("div");
+    vagdWrap.className = "vagd-wrap";
+    vagdWrap.dataset.label = "Vägd";
     const weighedLabel = document.createElement("label");
     weighedLabel.className = "weighed-check";
     weighedLabel.title = "Markera när vikten har kontrollerats på en våg.";
+    // Text still lives inline next to the checkbox too (desktop keeps
+    // this exact look, unchanged) -- .weighed-check-label hides it on
+    // mobile only, where the "VÄGD" pseudo-heading above (from
+    // vagdWrap's data-label) says it instead, so it isn't shown twice.
+    const weighedText = document.createElement("span");
+    weighedText.className = "weighed-check-label";
+    weighedText.textContent = "Vägd";
     weighedLabel.append(
       field("checkbox", item.weighed, "Kontrollvägd", (value) => item.weighed = value),
-      document.createTextNode("Vägd"),
+      weighedText,
     );
-    weightField.append(weighedLabel);
+    vagdWrap.append(weighedLabel);
+    weightField.append(vagdWrap);
     weightCell.append(weightField);
     const quantityCell = row.insertCell();
     quantityCell.dataset.label = "Antal";

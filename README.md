@@ -378,3 +378,26 @@ båda, och "Bränsle"/"Elektronik" visas nu i sin helhet istället för
   varje cell. Den gamla "HAR"-pseudo-rubriken (`::before`) är dold för
   den här cellen nu istället, för att inte visa samma ord två gånger
   igen.
+
+**Nionde rundan samma dag:** column-reverse-varianten av Vägd-headern
+var bara en approximation -- den satt nära men inte exakt i linje med
+Kategori/Antal/Vikt, eftersom Vägds kryssruta levde en nivå djupare
+(inne i `.weight-field`) än de andras egna `<td>`-element. Byggde om
+strukturellt istället för att finjustera pixlar: Vikt-inputen och
+Vägd-kryssrutan fick varsin `<div>`-wrapper i `itemRow()`
+(`.weight-input-wrap` / `.vagd-wrap`), var och en med sitt eget
+`data-label`. Den generiska pseudo-header-regeln gick från
+`td[data-label]::before` till `[data-label]::before` (vilken elementtyp
+som helst, inte bara `<td>`), så båda de nya wrapper-`div`arna får
+samma `::before`-rubrik som Kategori/Antal-cellerna -- exakt samma
+mekanism, inte en efterhandskonstruktion. `.weight-field`s
+`align-items` gick från `end` till `start` eftersom båda kolumnerna nu
+bygger sin egen rubrik-ovanför-fält-stapel och ska linjera upptill, som
+Kategori/Antal gör. Den gamla inline-texten bredvid kryssrutan
+(`.weighed-check-label`) lever kvar för skrivbordsvyn, bara dold på
+mobil nu (`display:none` i 700px-brytpunkten) eftersom `vagd-wrap`s
+pseudo-header säger samma sak.
+
+Verifierat mätt (`getBoundingClientRect()` på Kategori-cellen och den
+nya `.vagd-wrap`, mot en DOM-patchad kopia av produktionssajten) --
+`diff: 0` i vertikal position, pixel-perfekt samma rad.
