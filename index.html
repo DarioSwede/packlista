@@ -18,7 +18,7 @@
       if (storedPrefs.theme === "light") document.documentElement.classList.add("theme-light");
     } catch (e) { /* ignore malformed/blocked storage */ }
   </script>
-  <link rel="stylesheet" href="styles.css?v=31">
+  <link rel="stylesheet" href="styles.css?v=32">
 </head>
 <body>
   <div id="signed-out">
@@ -65,13 +65,19 @@
           <p class="lead">Prova en tom packlista direkt. Skapa ett konto när du vill spara den och fortsätta på en annan enhet.</p>
           <a class="primary-link" href="#prova">Prova utan konto</a>
         </div>
+        <!-- Static illustration, not wired to the actual (deliberately
+             empty) guest planner below -- one example item ("Tält", 1,20
+             kg) so the number and the bar fill agree with each other
+             instead of showing 0,00 kg next to a filled bar. Bar % is
+             just weight / 10 kg, the same default target used elsewhere
+             in the app. -->
         <div class="hero-card" aria-label="Exempel på viktsammanfattning">
           <span>Din nästa tur</span>
-          <strong>0,00 kg</strong>
-          <div class="weight-line"><i></i></div>
+          <strong>1,20 kg</strong>
+          <div class="weight-line"><i style="width:12%"></i></div>
           <dl>
-            <div><dt>Grundvikt</dt><dd>0,00 kg</dd></div>
-            <div><dt>Antal prylar</dt><dd>0</dd></div>
+            <div><dt>Grundvikt</dt><dd>1,20 kg</dd></div>
+            <div><dt>Antal prylar</dt><dd>1</dd></div>
           </dl>
         </div>
       </section>

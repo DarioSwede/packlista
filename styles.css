@@ -66,7 +66,13 @@ button{cursor:pointer}
 .lead{max-width:620px;margin:28px 0 34px;color:var(--lead);font-size:20px;line-height:1.55}
 .primary-link,.primary-button{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--green);border-radius:9px;background:var(--green);color:var(--on-accent);padding:11px 17px;font-weight:800;text-decoration:none}
 .primary-link:hover,.primary-button:hover{filter:brightness(1.08);transform:translateY(-1px)}
-.hero-card{border:1px solid var(--line);border-radius:22px;background:rgba(16,37,27,.82);padding:30px;box-shadow:0 28px 80px rgba(0,0,0,.3)}
+/* Was a hardcoded rgba(16,37,27,.82) -- the old dark --panel value at 82%
+   opacity, missed during the light-theme token conversion (2026-07-31).
+   In light theme that left a dark-green glass card with dark (var(--ink))
+   text on top of it -- barely readable. color-mix keeps the translucent
+   "glass over the hero gradient" look while actually following the
+   theme's --card token. */
+.hero-card{border:1px solid var(--line);border-radius:22px;background:color-mix(in srgb, var(--card) 82%, transparent);padding:30px;box-shadow:0 28px 80px rgba(0,0,0,.3)}
 .hero-card>span{color:var(--muted);font-size:13px}
 .hero-card>strong{display:block;margin:10px 0 24px;font-family:Georgia,serif;font-size:52px;font-weight:500}
 .weight-line{height:10px;border-radius:99px;background:var(--track);overflow:hidden}.weight-line i{display:block;width:8%;height:100%;background:var(--green)}
