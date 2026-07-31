@@ -548,7 +548,7 @@ function createPlanner(container, { session = null } = {}) {
     categoryCell.append(select);
 
     const weightCell = row.insertCell();
-    weightCell.dataset.label = "Vikt (gram) / Vägd";
+    weightCell.dataset.label = "Vikt";
     const weightField = document.createElement("div");
     weightField.className = "weight-field";
     const weightInput = field("number", item.weight, "Vikt i gram", (value) => item.weight = value);
@@ -557,10 +557,11 @@ function createPlanner(container, { session = null } = {}) {
     // fixed, narrow width instead of the full-width default (see .weight-field
     // in styles.css's 700px breakpoint).
     weightInput.max = "9999";
-    weightInput.placeholder = "gram";
-    // Show the box empty (with the "gram" placeholder) instead of a
-    // literal "0" for an unset weight -- a bare 0 read as ambiguous
-    // (a genuine zero-gram item vs. just never filled in yet).
+    // Show the box empty instead of a literal "0" for an unset weight --
+    // a bare 0 read as ambiguous (a genuine zero-gram item vs. just never
+    // filled in yet). No placeholder text either now (dropped "gram" --
+    // the "VIKT" pseudo-heading above the field already says what it is,
+    // no need to repeat the unit inside the box too).
     if (item.weight === 0) weightInput.value = "";
     weightField.append(weightInput);
     const weighedLabel = document.createElement("label");
@@ -582,15 +583,16 @@ function createPlanner(container, { session = null } = {}) {
     quantityCell.append(quantityInput);
     const ownedCell = row.insertCell();
     ownedCell.dataset.label = "Har";
-    // Wrapped the same way as Vägd (checkbox + visible text in a
-    // .weighed-check label) so the two read as a matched pair on mobile,
-    // instead of Har being a bare, unlabeled checkbox next to Vägd's
-    // checkbox+word.
+    // No visible text next to the checkbox -- the "HAR" pseudo-heading
+    // above it (from data-label, same as every other mobile field) already
+    // says what it is, so a second "Har" right below was pure repetition.
+    // Still wrapped in a <label> (not just the bare input) purely to
+    // enlarge the tap target -- the checkbox's own aria-label covers
+    // accessibility either way.
     const ownedLabel = document.createElement("label");
     ownedLabel.className = "weighed-check";
     ownedLabel.append(
       field("checkbox", item.owned, "Jag har prylen", (value) => item.owned = value),
-      document.createTextNode("Har"),
     );
     ownedCell.append(ownedLabel);
 

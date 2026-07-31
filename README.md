@@ -274,3 +274,28 @@ rad, tävlar inte om bredd med Har längre). Namnradens avdelarlinje
 gick från `border-bottom` till `border-top` eftersom namnet bytte sida
 (understa raden nu, inte översta). Verifierat i samma sorts test-iframe
 som ovan, ner till 320px bredd (minsta vanliga telefonbredd).
+
+**Fjärde rundan samma dag** -- Tor bad om ett konkret, fast upplägg
+istället för att flex-wrap fritt skulle avgöra radbrytningarna:
+rad 1 = Kategori + Vikt (Vägd rider med inne i Vikt-cellen, som förut),
+rad 2 = Pryl (namn + F/B/★/× rider med i samma cell) + Antal + Har.
+Flexbox har ingen inbyggd "tvinga radbrytning här"-mekanism mellan två
+syskon-element på samma nivå, så en osynlig `tbody tr::after`-pseudo-
+element med `flex-basis:100%` sitter mellan de två gruppernas
+`order`-värden (kategori=1, vikt=2, brytare=3, namn=4, antal=5, har=6)
+-- ett 100%-brett flex-element kan inte dela rad med något, vilket
+tvingar allt som kommer efter det till en ny rad, utan att någon extra
+riktig DOM-nod behövs.
+
+Två mindre städningar i samma veva:
+- **"gram" borttaget** från Vikt-fältet -- både pseudo-rubriken
+  (`data-label` gick från `"Vikt (gram) / Vägd"` till bara `"Vikt"`)
+  och placeholder-texten i själva inputen (borttagen helt). Rubriken
+  "VIKT" ovanför fältet säger redan vad det är.
+- **Har-kryssrutans dubbla text borttagen** -- den hade både
+  pseudo-rubriken "HAR" ovanför sig och ordet "Har" bredvid kryssrutan,
+  två gånger samma information. Ordet bredvid kryssrutan är borttaget,
+  pseudo-rubriken (samma mönster som alla andra fält) räcker.
+
+Verifierat live mot produktionssajten (test-iframe, 375px och 320px)
+innan commit.
