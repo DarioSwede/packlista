@@ -311,3 +311,27 @@ Verifierat live att "9999" fortfarande visas i sin helhet (inte
 avklippt) i den smalare Vikt-inputen -- testat mot Chrome-renderad
 sifferstegrare (worst case), som Tors faktiska iOS Safari inte ens
 visar, så marginalen är i praktiken större på riktiga enheten.
+
+**Sjätte rundan samma dag -- den faktiska överlappsbuggen hittad:** en
+skärmdump från Tors riktiga telefon visade Antal-fältet liggande
+ovanpå Kategori-fältet. Mätte upp exakt varför direkt mot
+produktionssajten (samma test-iframe-teknik, men den här gången med
+`getBoundingClientRect()` istället för bara ögonmått): Kategori-cellens
+`<select>` hade `max-width:120px` satt som ett fast pixelvärde, men en
+`<select>` med `width:auto` storleksätter sig efter sitt *bredaste
+alternativ* (oavsett vilket som råkar vara valt) -- helt oberoende av
+hur brett flex-layouten faktiskt gav dess `<td>` (uppmätt till 101px).
+Selecten renderade alltså 120px brett i en 101px-cell och blödde ~11px
+rakt in i Antal-cellen bredvid. `max-width:100%` istället för ett
+gissat pixeltal löser det category-överskridande generellt -- selecten
+kan aldrig bli bredare än sin faktiska container oavsett vad flexboxen
+landar på, så överlapp är strukturellt omöjligt nu (precis som
+tbody tr::after-tricket gör för hela raderna). Om ett långt
+kategorinamn inte får plats klipps texten av med "..." istället --
+verifierat mätt för både kortaste ("Bo") och längsta ("Elektronik")
+kategorin, båda 0px överlapp.
+
+Passade också på att dra åt höjdledens luft en aning: `row-gap` 8->6px,
+namnradens `padding-top` (ovanför avdelarlinjen) 8->5px -- de två
+lades ihop till mer luft än nödvändigt när radbrytningen mellan
+fält-raden och namnraden redan sköts av `tbody tr::after`-tricket.

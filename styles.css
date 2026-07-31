@@ -312,7 +312,7 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
      with anything, which forces everything ordered after it onto a new
      line, without needing an extra real DOM element. */
   tbody tr{
-    display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:8px;row-gap:8px;
+    display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:8px;row-gap:6px;
     margin-bottom:10px;border:1px solid var(--line);border-radius:12px;padding:10px 10px;background:var(--card);
   }
   tbody tr::after{content:"";order:4;flex-basis:100%}
@@ -326,25 +326,28 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
      fields below; now it's on row 2 (order:5, see tbody tr above), so
      the same divider moves to border-top instead, still separating name
      from the field group above it. */
-  .table-wrap th:first-child,.table-wrap td:first-child{position:static;min-width:0;background:transparent;box-shadow:none;padding-top:8px;border-top:1px solid var(--line)}
+  .table-wrap th:first-child,.table-wrap td:first-child{position:static;min-width:0;background:transparent;box-shadow:none;padding-top:5px;border-top:1px solid var(--line)}
   td[data-label]::before{content:attr(data-label);display:block;margin-bottom:3px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
-  /* Antal/Vikt/Kategori no longer need to fill their whole width --
-     Antal is capped at 99 (2 digits), Vikt at 9999 (4 digits, see the
-     .max attributes set in itemRow()), and Kategori only ever needs to
-     fit its longest option ("Elektronik"). Trimmed a little tighter than
-     the earlier round (56->52, 66->64, 130->120, gaps 10/6->8/5) so all
-     three actually share one line on a typical phone now that Antal
-     joined Kategori+Vikt there, instead of always wrapping to a second
-     line -- verified live (incl. that "9999" still displays in full,
-     not clipped) against a real Chrome-rendered number-spinner input,
-     which is the worst case: iOS Safari, what Tor's on, doesn't render
-     spinner arrows at all, so there's more real breathing room there
-     than tested here. If a row's items still don't fit on some phone,
-     flex-wrap just drops the last one(s) to an extra line -- no
-     overflow, no overlap either way. */
+  /* Antal/Vikt no longer need to fill their whole width -- Antal is
+     capped at 99 (2 digits), Vikt at 9999 (4 digits, see the .max
+     attributes set in itemRow()). If a row's items don't all fit on
+     one line on a given phone, flex-wrap just drops the last one(s) to
+     an extra line -- no overflow, no overlap. */
   td[data-label="Antal"] input{width:52px}
   td[data-label="Vikt"] input{width:64px}
-  td[data-label="Kategori"] select{width:auto;max-width:120px}
+  /* Kategori's <select> found a real overlap bug on Tor's actual phone:
+     a fixed max-width:120px sizes the select off its own widest OPTION
+     (which native selects do regardless of the currently chosen one),
+     completely ignoring what width its flex-item <td> actually ended up
+     with (flex:1 1 70px can compute to less than 120px once Antal+Vikt
+     have taken their fixed share of the row) -- confirmed live: the td
+     was 101px, the select still rendered at 120px and bled ~11px into
+     Antal's box. max-width:100% ties the select to its *actual*
+     container width instead of a guessed pixel number, so it can never
+     render wider than the space flex actually gave it -- if that means
+     a long category name gets ellipsized inside a narrow box on some
+     phone, that's fine; overlap wasn't. */
+  td[data-label="Kategori"] select{width:auto;max-width:100%;min-width:0;overflow:hidden;text-overflow:ellipsis}
   /* Inline (input, then Vägd's checkbox+label right after it) -- overrides
      the desktop .weight-field's wider minmax(86px,1fr) column with two
      auto-sized ones that hug the (already-narrowed) input and text. */
