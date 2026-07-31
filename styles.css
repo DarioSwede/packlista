@@ -293,6 +293,15 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
   [data-view="print"]:not([hidden]),[data-view="print"]:not([hidden]) *{visibility:visible}
   [data-view="print"]:not([hidden]){position:absolute;inset:0;display:block!important}
   .print-sheet{width:auto;min-height:0;margin:0;padding:0;box-shadow:none}
+  /* visibility:hidden alone leaves layout space behind and doesn't
+     reliably suppress box-shadow/backdrop-filter in every print engine,
+     which can show up as a stray colored/shadowed box below the actual
+     print sheet ("konstigt fält" -- reported 2026-07-31). These are the
+     elements with a background, shadow or blur that could leak through:
+     force them fully out of the render tree instead of just invisible. */
+  .site-header,.app-header,.planner-sidebar,.top-stats,.save-state-top,
+  .toolbar,[data-view="packing"],[data-view="shopping"],
+  .modal-backdrop,.planner-modal-backdrop{display:none!important}
   .no-print{display:none!important}
   .print-table{page-break-inside:auto}.print-table tr{page-break-inside:avoid}
 }
