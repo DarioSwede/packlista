@@ -201,3 +201,15 @@ praktiken:
   justerad i samklang. Ett `window.confirm(...)` med prylens namn körs
   nu innan raderingen faktiskt sker, samma mönster som "Ta bort konto"
   i kontoinställningarna.
+
+**Direkt uppföljning samma dag:** med Antal/Vikt/Kategori väl
+smalnade fanns det plats för alla tre på samma rad, inte bara
+Kategori+Antal som förut. `tbody tr` i 700px-brytpunkten gick från en
+2-kolumners till en `1fr auto auto`-grid (Kategori får det som blir
+över, Antal/Vikt sina egna innehållsbredder) med
+`grid-template-areas:"name name name" "category quantity weight" "owned owned weight"`
+-- Vikt-cellen spänner över både rad 2 och 3 (vikt-input i rad 2:s del,
+Vägd-kryssrutan i rad 3:s del, se `.weight-field`s stapling), och
+Har-cellen spänner de två kolumnerna Vägd inte upptar. Ner till 3
+synliga rader per pryl (namn, kategori/antal/vikt, har) istället för 3
+rader där den tredje bara innehöll två fält.

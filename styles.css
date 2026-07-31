@@ -292,14 +292,16 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
   table{width:100%;min-width:0}
   thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
   /* Agreed with Tor -- one field per row was wasting the card's own
-     width while eating 5 rows' worth of height per item. Kategori/Antal
-     and Vikt/Har are each genuinely narrow enough to share a row, so the
-     card is a 2-column grid with the name spanning full width on top
-     (its own row/border already, set below) and those four fields paired
-     up underneath -- 3 visual rows per item instead of 5. */
+     width while eating 5 rows' worth of height per item. Once Antal/Vikt
+     are capped and narrowed (see below) there's room for Kategori, Antal
+     and Vikt on one row together, with Har and Vägd sharing the row
+     underneath -- 3 visual rows per item instead of 5. The weight cell
+     spans both of those rows (input on top, Vägd checkbox below it, see
+     .weight-field) so Vikt and Vägd still read as one field, and Har
+     spans the two columns Vägd doesn't occupy. */
   tbody tr{
-    display:grid;grid-template-columns:1fr 1fr;column-gap:12px;
-    grid-template-areas:"name name" "category quantity" "weight owned";
+    display:grid;grid-template-columns:1fr auto auto;column-gap:12px;
+    grid-template-areas:"name name name" "category quantity weight" "owned owned weight";
     margin-bottom:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);
   }
   td{border-bottom:0;padding:5px 0}
@@ -313,21 +315,18 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
   /* Antal/Vikt/Kategori no longer need to fill their whole grid column --
      Antal is capped at 99 (2 digits), Vikt at 9999 (4 digits, see the
      .max attributes set in itemRow()), and Kategori only ever needs to
-     fit its longest option ("Elektronik"). Shrinking them to fixed/content
-     widths instead of the default width:100% leaves a bit of empty space
-     in each cell, which is fine -- there was room to spare (Tor's feedback:
-     "gott om utrymme att korta ned fältens bredd"). */
-  td[data-label="Antal"] input{width:60px}
-  td[data-label="Kategori"] select{width:auto;max-width:140px}
-  /* Vägd (inside the weight cell) and Har (its own cell) sit in different
-     grid columns on this card layout, so lining their checkboxes up on the
-     same horizontal line isn't possible -- the columns don't start at the
-     same x. Stacking the weight input above Vägd instead of beside it
-     means both Vägd and Har end up flush-left at their own cell's start,
-     which reads as a matched, aligned pair even though the columns
-     themselves sit side by side. */
+     fit its longest option ("Elektronik"). Fixed/content widths instead
+     of the default width:100% is what makes room for all three on one
+     row -- the grid's "auto auto" columns size themselves to whatever
+     these two inputs need, leaving Kategori the rest. */
+  td[data-label="Antal"] input{width:56px}
+  td[data-label="Vikt (gram) / Vägd"] input{width:66px}
+  td[data-label="Kategori"] select{width:auto;max-width:130px}
+  /* Vägd lives inside the weight cell, which spans this row and the one
+     below (grid-area above), so the input sits in row 2's slice and the
+     checkbox in row 3's -- keeping Vikt/Vägd together as one field while
+     freeing row 2 up for Kategori+Antal+Vikt side by side. */
   .weight-field{grid-template-columns:1fr;justify-items:start;row-gap:6px}
-  td[data-label="Vikt (gram) / Vägd"] input{width:70px}
   td:nth-child(5){display:flex;align-items:center;text-align:left}
 }
 /* Hover-revealed item-action buttons (Förbrukas/Bärs på kroppen/Favorit,
