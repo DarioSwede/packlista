@@ -247,3 +247,30 @@ förbi paddingen till höger istället för att krympa. Fixat med
 `minmax(0,1fr)` istället för `1fr` på `tbody tr`, plus `min-width:0` på
 `td` som allmänt skydd mot samma fälla i andra celler. Verifierat live
 i en 360px-bred test-iframe mot produktionssajten innan/efter fixet.
+
+**Samma dag, en runda till:** en skärmdump från en riktig telefon visade
+att namnraden (namn + F/B/★/× + Har, alla klämda in i samma grid-area)
+faktiskt låg på varandra -- exakt samma sorts bugg som ovan, fast ett
+steg djupare: `.item-name-field`s egen inre grid
+(`minmax(90px,1fr) auto 22px`) blåste ut sin egen box på samma sätt när
+kortets yttre grid gav den mindre bredd än den behövde (namn delade rad
+med Har, fick bara 2 av 3 kolumner). Att bara justera pixelbredder ett
+varv till hade riskerat att bara flytta samma fälla till nästa enhet
+med andra typsnittsmått.
+
+Löst mer grundläggande: hela kortlayouten gick från CSS Grid till
+flex-wrap, både i `.item-name-field` och i `tbody tr`. Grid-spår
+(`auto`/bar `1fr`) har ett implicit golv och svämmar bara över sin box
+om det inte finns plats; flex-wrap kan strukturellt inte göra det --
+ett element som inte får plats radbryts till en ny rad istället, så
+överlapp är omöjligt by design, inte bara testat okej på en specifik
+bredd. `tbody tr` är nu en enda flex-wrap-grupp: Kategori/Antal/
+Vikt+Vägd/Har (td 2-5) har `order:0` (DOM-ordning, samma som
+skrivbordstabellens kolumnordning), Namnet (td 1) har
+`flex-basis:100%` + `order:1` -- tvingar in det på en egen rad *efter*
+fältgruppen. Det ger både det Tor bad om (Kategori hamnar överst) och
+håller ihop namnets egna F/B/★/×-knappar med namnet (samma cell, egen
+rad, tävlar inte om bredd med Har längre). Namnradens avdelarlinje
+gick från `border-bottom` till `border-top` eftersom namnet bytte sida
+(understa raden nu, inte översta). Verifierat i samma sorts test-iframe
+som ovan, ner till 320px bredd (minsta vanliga telefonbredd).

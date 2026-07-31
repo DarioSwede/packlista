@@ -192,7 +192,12 @@ th abbr{text-decoration:none;cursor:help}
 .table-wrap th:first-child{z-index:3}
 td:nth-child(5){text-align:center}td input[type=checkbox]{width:auto}
 td input[type=checkbox]:disabled{cursor:not-allowed;opacity:.25}
-.item-name-field{display:grid;grid-template-columns:minmax(90px,1fr) auto 22px;align-items:center;gap:6px}
+/* flex, not grid -- flex items shrink together properly (with min-width:0,
+   see below) instead of grid's "auto"/"1fr" tracks silently keeping a
+   content-sized floor that can overflow the row on a narrow phone. */
+.item-name-field{display:flex;align-items:center;gap:6px}
+.item-name-field>input{flex:1 1 90px;min-width:0}
+.item-name-field .item-actions,.item-name-field .delete-button{flex:0 0 auto}
 /* ---- per-item hover actions (2026-07-31) -- Förbrukas/Bärs på
    kroppen/Favorit used to be table columns (Förbrukas still was, until
    this change; worn was removed entirely in an earlier commit, favorite
@@ -291,50 +296,53 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
   .table-wrap{overflow-x:visible;border:0;border-radius:0}
   table{width:100%;min-width:0}
   thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-  /* Agreed with Tor -- one field per row was wasting the card's own
-     width while eating 5 rows' worth of height per item. Two visual rows
-     per item now: name+Har on top (Har belongs with "does this exist
-     yet" more than with the field-row below, so it rides along with the
-     item itself), Kategori/Antal/Vikt+Vägd underneath -- Vägd sits
-     inline at the tail end of the weight cell, which is itself the row's
-     last column, so it lands at the row's far right edge, still visibly
-     paired with Vikt right next to it. */
-  /* minmax(0,1fr), not plain 1fr -- a bare 1fr track still respects its
-     item's min-content as an implicit floor (here, Kategori's <select>,
-     whose min-content is roughly "Elektronik"s width). On a narrow
-     enough phone that floor plus the other two auto columns add up to
-     more than the card's inner width, and the row blows out past the
-     card's own right padding/border instead of shrinking. minmax(0,1fr)
-     removes that floor so the column (and the select inside it) can
-     actually shrink down to fit. */
+  /* Card layout switched from CSS Grid to flex-wrap (2026-08-01) after a
+     real-phone screenshot showed the name row (name + F/B/star/x + Har,
+     all crammed into a grid area sized by an unrelated row's columns)
+     visually overlapping -- a nested grid-blowout inside .item-name-field
+     itself, one level deeper than the row-level blowout fixed earlier
+     the same day. Grid tracks ("auto"/plain "1fr") keep an implicit
+     content-sized floor and just overflow their box when there isn't
+     room; flex-wrap structurally can't do that -- an item that doesn't
+     fit wraps to a new line instead, so overlap is impossible by
+     construction, not just by having tuned the right pixel widths for
+     one test device.
+     Kategori/Antal/Vikt+Vägd/Har (td 2-5) are one flex-wrap group with
+     no set order -- follows itemRow()'s own DOM order, matching the
+     desktop table's column order. Name (td 1) has flex-basis:100% and
+     order:1 (everything else defaults to order:0), which forces it onto
+     its own line *after* the field group -- Kategori ends up on top like
+     Tor asked, and the name's own F/B/star/x buttons stay attached to
+     the name (same cell, same .item-name-field flex row, see above) on
+     the line below instead of competing with Har for width. */
   tbody tr{
-    display:grid;grid-template-columns:minmax(0,1fr) auto auto;column-gap:12px;
-    grid-template-areas:"name name owned" "category quantity weight";
+    display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:10px;row-gap:8px;
     margin-bottom:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);
   }
-  td{border-bottom:0;padding:5px 0;min-width:0}
-  td:nth-child(1){grid-area:name}
-  td:nth-child(2){grid-area:category}
-  td:nth-child(3){grid-area:weight}
-  td:nth-child(4){grid-area:quantity}
-  td:nth-child(5){grid-area:owned}
-  .table-wrap th:first-child,.table-wrap td:first-child{position:static;min-width:0;background:transparent;box-shadow:none;padding-bottom:8px;margin-bottom:6px;border-bottom:1px solid var(--line)}
+  td{border-bottom:0;padding:0;min-width:0}
+  td:nth-child(1){flex:1 1 100%;order:1}
+  td:nth-child(2){flex:1 1 70px}
+  td:nth-child(3){flex:0 0 auto}
+  td:nth-child(4){flex:0 0 auto}
+  td:nth-child(5){flex:0 0 auto}
+  /* Name used to be first/top with a border-bottom separating it from the
+     fields below; now it's last/bottom (order:1, see tbody tr above), so
+     the same divider moves to border-top instead, still separating name
+     from the field group above it. */
+  .table-wrap th:first-child,.table-wrap td:first-child{position:static;min-width:0;background:transparent;box-shadow:none;padding-top:8px;border-top:1px solid var(--line)}
   td[data-label]::before{content:attr(data-label);display:block;margin-bottom:3px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
-  /* Antal/Vikt/Kategori no longer need to fill their whole grid column --
+  /* Antal/Vikt/Kategori no longer need to fill their whole width --
      Antal is capped at 99 (2 digits), Vikt at 9999 (4 digits, see the
      .max attributes set in itemRow()), and Kategori only ever needs to
-     fit its longest option ("Elektronik"). Fixed/content widths instead
-     of the default width:100% is what makes room for all three on one
-     row -- the grid's "auto auto" columns size themselves to whatever
-     these two inputs need, leaving Kategori the rest. */
+     fit its longest option ("Elektronik"). If the four don't all fit on
+     one line on a given phone, flex-wrap just drops the last one(s) to
+     a second line -- no overflow, no overlap, just an extra row. */
   td[data-label="Antal"] input{width:56px}
   td[data-label="Vikt (gram) / Vägd"] input{width:66px}
   td[data-label="Kategori"] select{width:auto;max-width:130px}
-  /* Inline again (input, then Vägd's checkbox+label right after it) now
-     that Vägd only has to share its column with itself, not with Har --
-     overrides the desktop .weight-field's wider minmax(86px,1fr) column
-     with two auto-sized ones that hug the (already-narrowed) input and
-     the checkbox+text. */
+  /* Inline (input, then Vägd's checkbox+label right after it) -- overrides
+     the desktop .weight-field's wider minmax(86px,1fr) column with two
+     auto-sized ones that hug the (already-narrowed) input and text. */
   .weight-field{grid-template-columns:auto auto;column-gap:6px}
   td:nth-child(5){display:flex;align-items:center;text-align:left}
 }
