@@ -218,3 +218,20 @@ Vägd-kryssrutan i rad 3:s del, se `.weight-field`s stapling), och
 Har-cellen spänner de två kolumnerna Vägd inte upptar. Ner till 3
 synliga rader per pryl (namn, kategori/antal/vikt, har) istället för 3
 rader där den tredje bara innehöll två fält.
+
+**Ytterligare en omgång samma dag** landade på 2 rader per pryl:
+
+- **Vikt-fältet** visar `placeholder="gram"` istället för ett bokstavligt
+  "0" när vikten är ovägd/oifylld (`weightInput.value = ""` i `itemRow()`
+  när `item.weight === 0`) -- en bar nolla var tvetydig, gick inte att
+  se om det var en riktig 0-gramspryl eller bara aldrig ifylld.
+- **Vägd flyttade tillbaka inline** bredvid vikt-inputen (inte staplad
+  under längre) -- `.weight-field{grid-template-columns:auto auto}` i
+  700px-brytpunkten. Eftersom Vikt-cellen är radens sista kolumn hamnar
+  Vägd-kryssrutan automatiskt längst ut till höger i fältraden, precis
+  bredvid vikten den hör ihop med.
+- **Har flyttade upp till namnraden** istället för att dela rad med
+  fält-blocket -- `grid-template-areas` gick från 3 rader till 2:
+  `"name name owned" "category quantity weight"`. Ren CSS-omplacering
+  (samma `<td>`, bara ny grid-area), ingen DOM-flytt behövdes eftersom
+  Har redan var sin egen tabellcell.

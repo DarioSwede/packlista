@@ -557,6 +557,11 @@ function createPlanner(container, { session = null } = {}) {
     // fixed, narrow width instead of the full-width default (see .weight-field
     // in styles.css's 700px breakpoint).
     weightInput.max = "9999";
+    weightInput.placeholder = "gram";
+    // Show the box empty (with the "gram" placeholder) instead of a
+    // literal "0" for an unset weight -- a bare 0 read as ambiguous
+    // (a genuine zero-gram item vs. just never filled in yet).
+    if (item.weight === 0) weightInput.value = "";
     weightField.append(weightInput);
     const weighedLabel = document.createElement("label");
     weighedLabel.className = "weighed-check";

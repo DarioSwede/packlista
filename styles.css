@@ -292,16 +292,16 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
   table{width:100%;min-width:0}
   thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
   /* Agreed with Tor -- one field per row was wasting the card's own
-     width while eating 5 rows' worth of height per item. Once Antal/Vikt
-     are capped and narrowed (see below) there's room for Kategori, Antal
-     and Vikt on one row together, with Har and Vägd sharing the row
-     underneath -- 3 visual rows per item instead of 5. The weight cell
-     spans both of those rows (input on top, Vägd checkbox below it, see
-     .weight-field) so Vikt and Vägd still read as one field, and Har
-     spans the two columns Vägd doesn't occupy. */
+     width while eating 5 rows' worth of height per item. Two visual rows
+     per item now: name+Har on top (Har belongs with "does this exist
+     yet" more than with the field-row below, so it rides along with the
+     item itself), Kategori/Antal/Vikt+Vägd underneath -- Vägd sits
+     inline at the tail end of the weight cell, which is itself the row's
+     last column, so it lands at the row's far right edge, still visibly
+     paired with Vikt right next to it. */
   tbody tr{
     display:grid;grid-template-columns:1fr auto auto;column-gap:12px;
-    grid-template-areas:"name name name" "category quantity weight" "owned owned weight";
+    grid-template-areas:"name name owned" "category quantity weight";
     margin-bottom:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);
   }
   td{border-bottom:0;padding:5px 0}
@@ -322,11 +322,12 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
   td[data-label="Antal"] input{width:56px}
   td[data-label="Vikt (gram) / Vägd"] input{width:66px}
   td[data-label="Kategori"] select{width:auto;max-width:130px}
-  /* Vägd lives inside the weight cell, which spans this row and the one
-     below (grid-area above), so the input sits in row 2's slice and the
-     checkbox in row 3's -- keeping Vikt/Vägd together as one field while
-     freeing row 2 up for Kategori+Antal+Vikt side by side. */
-  .weight-field{grid-template-columns:1fr;justify-items:start;row-gap:6px}
+  /* Inline again (input, then Vägd's checkbox+label right after it) now
+     that Vägd only has to share its column with itself, not with Har --
+     overrides the desktop .weight-field's wider minmax(86px,1fr) column
+     with two auto-sized ones that hug the (already-narrowed) input and
+     the checkbox+text. */
+  .weight-field{grid-template-columns:auto auto;column-gap:6px}
   td:nth-child(5){display:flex;align-items:center;text-align:left}
 }
 /* Hover-revealed item-action buttons (Förbrukas/Bärs på kroppen/Favorit,
