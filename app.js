@@ -573,9 +573,14 @@ function createPlanner(container, { session = null } = {}) {
       selectedList.name = listName;
       renderListSwitcher();
     }
+    if (error) console.error("Packlista: kunde inte spara", error);
     saveState.textContent = error?.code === "23505"
       ? "Namnet används redan · välj ett unikt namn"
-      : error ? "Kunde inte spara" : "Sparad ✓";
+      // Includes the raw Supabase error message (e.g. "column favorite does
+      // not exist") so a save failure is diagnosable from the UI alone,
+      // without needing devtools open -- see README's "Kunde inte spara"
+      // troubleshooting note.
+      : error ? `Kunde inte spara: ${error.message || error.code || "okänt fel"}` : "Sparad ✓";
   }
 
   function mergedCategories(stored = []) {
