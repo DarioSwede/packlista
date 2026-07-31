@@ -6,7 +6,19 @@
   <meta name="theme-color" content="#08140f">
   <meta name="description" content="Skapa en personlig packlista och håll koll på vikten inför nästa vandring.">
   <title>Packlista</title>
-  <link rel="stylesheet" href="styles.css?v=21">
+  <script>
+    // Applies the saved theme before first paint, straight from localStorage,
+    // so a light-mode user doesn't see a flash of the dark default while
+    // app.js (a deferred module script) loads. Mirrors the same prefs.theme
+    // logic app.js's applyTheme() uses once it takes over -- see that
+    // function for the "real" implementation and README.md for the full
+    // writeup of the dark-mode toggle feature.
+    try {
+      var storedPrefs = JSON.parse(localStorage.getItem("packlista-prefs") || "{}");
+      if (storedPrefs.theme === "light") document.documentElement.classList.add("theme-light");
+    } catch (e) { /* ignore malformed/blocked storage */ }
+  </script>
+  <link rel="stylesheet" href="styles.css?v=22">
 </head>
 <body>
   <div id="signed-out">
@@ -30,6 +42,13 @@
                 <option value="comfortable">Bekväm</option>
                 <option value="compact">Kompakt</option>
               </select>
+            </label>
+            <label class="dropdown-field switch-field">
+              <span>Mörkt läge</span>
+              <span class="switch">
+                <input type="checkbox" id="theme-toggle-guest" aria-label="Mörkt läge" checked>
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+              </span>
             </label>
             <p class="dropdown-hint">Packlista mäter inte volym, bara vikt — så bara vikt går att växla enhet på.</p>
           </div>
@@ -91,6 +110,13 @@
                 <option value="comfortable">Bekväm</option>
                 <option value="compact">Kompakt</option>
               </select>
+            </label>
+            <label class="dropdown-field switch-field">
+              <span>Mörkt läge</span>
+              <span class="switch">
+                <input type="checkbox" id="theme-toggle-app" aria-label="Mörkt läge" checked>
+                <span class="switch-track"><span class="switch-thumb"></span></span>
+              </span>
             </label>
             <p class="dropdown-hint">Packlista mäter inte volym, bara vikt — så bara vikt går att växla enhet på.</p>
           </div>
@@ -292,6 +318,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=18"></script>
+  <script type="module" src="app.js?v=19"></script>
 </body>
 </html>

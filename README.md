@@ -46,3 +46,29 @@ mot headern — det var det som lästes som att texten "hängde" för nära
 Flera namngivna packlistor och byte av namn på en lista fanns redan sedan
 tidigare (`packing_lists`-tabellen, `.list-switcher` i sidopanelen) — inget
 nytt här.
+
+## Mörkt/ljust läge (2026-07-31)
+
+Kugghjulsmenyn har fått en tredje inställning, en pill-switch ("Mörkt
+läge") bredvid enhet och radtäthet, samma `#theme-toggle-guest` /
+`#theme-toggle-app`-par-mönster som de andra kontrollerna.
+
+Hela paletten i `styles.css` var innan detta en enda uppsättning
+hårdkodade hex-färger direkt i varje regel. De är nu samlade till namngivna
+tokens överst i `:root` (`--card`, `--well`, `--hover`, `--accent-soft`,
+`--danger-*`, `--status-*`, `--track` m.fl.) så att `html.theme-light`
+(sist i filen) kan skriva om hela paletten på ett ställe istället för att
+jaga varje regel. Mörkt läge är standard och oförändrat i utseende — det är
+bara samma gamla hex-värden flyttade in i tokens.
+
+`prefs.theme` ("dark"/"light") sparas i samma `packlista-prefs`-post i
+`localStorage` som enhet/densitet, och `applyTheme()` i `app.js` sätter
+klassen `theme-light` på `<html>`. En liten inline-`<script>` i
+`index.html`s `<head>` läser samma nyckel direkt ur `localStorage` och
+sätter klassen innan sidan ens ritas ut, så en användare med sparat ljust
+läge inte ser en blixt av mörkt tema medan `app.js` (en deferred
+module-script) laddar.
+
+`.print-sheet` (A4-utskriften) är medvetet inte kopplad till temat — den
+renderas alltid vitt papper/svart text oavsett `prefs.theme`, precis som
+förut, eftersom det är vad som faktiskt hamnar på papperet.

@@ -39,12 +39,27 @@ function loadPrefs() {
   return {
     unit: stored.unit === "us" ? "us" : "metric",
     density: stored.density === "compact" ? "compact" : "comfortable",
+    theme: stored.theme === "light" ? "light" : "dark",
   };
 }
 let prefs = loadPrefs();
 function savePrefs() {
   try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch { /* ignore malformed/blocked storage */ }
 }
+
+// ---- theme (dark/light) -- index.html has a tiny inline script that
+// mirrors this same prefs.theme read and applies .theme-light to <html>
+// before app.js (a deferred module script) even loads, so there's no
+// flash of the wrong theme on reload. This copy re-applies it once app.js
+// takes over, and additionally keeps the browser-chrome theme-color meta
+// tag in sync so e.g. Android's status bar matches too.
+const THEME_COLOR = { dark: "#08140f", light: "#f6f4ee" };
+function applyTheme() {
+  document.documentElement.classList.toggle("theme-light", prefs.theme === "light");
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", THEME_COLOR[prefs.theme]);
+}
+applyTheme();
 
 const KG_PER_LB = 0.45359237;
 const G_PER_LB = KG_PER_LB * 1000;
@@ -871,9 +886,11 @@ initDropdowns();
 function initSettingsControls() {
   const unitSelects = [$("#unit-select-guest"), $("#unit-select-app")].filter(Boolean);
   const densitySelects = [$("#density-select-guest"), $("#density-select-app")].filter(Boolean);
+  const themeToggles = [$("#theme-toggle-guest"), $("#theme-toggle-app")].filter(Boolean);
   function syncControls() {
     unitSelects.forEach((select) => { select.value = prefs.unit; });
     densitySelects.forEach((select) => { select.value = prefs.density; });
+    themeToggles.forEach((toggle) => { toggle.checked = prefs.theme === "dark"; });
   }
   syncControls();
   unitSelects.forEach((select) => select.addEventListener("change", () => {
@@ -887,6 +904,12 @@ function initSettingsControls() {
     savePrefs();
     syncControls();
     refreshAllPlanners();
+  }));
+  themeToggles.forEach((toggle) => toggle.addEventListener("change", () => {
+    prefs = { ...prefs, theme: toggle.checked ? "dark" : "light" };
+    savePrefs();
+    applyTheme();
+    syncControls();
   }));
 }
 initSettingsControls();
