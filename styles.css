@@ -285,8 +285,23 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
   .table-wrap{overflow-x:visible;border:0;border-radius:0}
   table{width:100%;min-width:0}
   thead{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
-  tbody tr{display:block;margin-bottom:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card)}
-  td{display:block;border-bottom:0;padding:5px 0}
+  /* Agreed with Tor -- one field per row was wasting the card's own
+     width while eating 5 rows' worth of height per item. Kategori/Antal
+     and Vikt/Har are each genuinely narrow enough to share a row, so the
+     card is a 2-column grid with the name spanning full width on top
+     (its own row/border already, set below) and those four fields paired
+     up underneath -- 3 visual rows per item instead of 5. */
+  tbody tr{
+    display:grid;grid-template-columns:1fr 1fr;column-gap:12px;
+    grid-template-areas:"name name" "category quantity" "weight owned";
+    margin-bottom:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);
+  }
+  td{border-bottom:0;padding:5px 0}
+  td:nth-child(1){grid-area:name}
+  td:nth-child(2){grid-area:category}
+  td:nth-child(3){grid-area:weight}
+  td:nth-child(4){grid-area:quantity}
+  td:nth-child(5){grid-area:owned}
   .table-wrap th:first-child,.table-wrap td:first-child{position:static;min-width:0;background:transparent;box-shadow:none;padding-bottom:8px;margin-bottom:6px;border-bottom:1px solid var(--line)}
   td[data-label]::before{content:attr(data-label);display:block;margin-bottom:3px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
   td:nth-child(5){text-align:left}
