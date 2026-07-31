@@ -335,3 +335,20 @@ Passade också på att dra åt höjdledens luft en aning: `row-gap` 8->6px,
 namnradens `padding-top` (ovanför avdelarlinjen) 8->5px -- de två
 lades ihop till mer luft än nödvändigt när radbrytningen mellan
 fält-raden och namnraden redan sköts av `tbody tr::after`-tricket.
+
+**Sjunde rundan samma dag:** `max-width:100%` löste överlappet men gav
+Kategori bara "vad som blev över" efter Antal/Vikts fasta pixelbredder
+-- för smalt för längre namn ("Bränsle"/"Elektronik" klipptes ner till
+bara ikonen + "..."). Tor bad om explicita proportioner istället:
+40/25/25/10 för Kategori/Antal/Vikt/Vägd. Bytte de fasta bredderna mot
+`flex-grow`-kvoter med `flex-basis:0` (`flex:40 0 0` osv.) på
+`tbody tr`s tre fält-`td`, och Kategori-selecten/Antal-Vikt-inputen
+till `width:100%` av sin `td` istället för ett pixeltal -- samma
+`max-width:100%`-princip som löste överlappet, bara nu med en
+garanterad, förutsägbar andel av raden istället för restposten. Vikt
+(25) och Vägd (10) delar sin gemensamma `td` (35% totalt) 5:2 via
+samma teknik i `.weight-field`s `grid-template-columns`. Verifierat
+`getBoundingClientRect()` mot produktionssajten för både kortaste
+("Bo") och längsta ("Elektronik") kategorinamnet -- 0px överlapp i
+båda, och "Bränsle"/"Elektronik" visas nu i sin helhet istället för
+"...".
