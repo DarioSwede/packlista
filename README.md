@@ -12,6 +12,24 @@ Publiceras med GitHub Pages på:
 
 https://darioswede.github.io/packlista/
 
+## Anpassad domän (2026-07-31)
+
+`CNAME`-filen i repo-roten kopplar GitHub Pages till
+`packlista.utiskogen.se`. DNS sköts hos Loopia (LoopiaDNS, uppgraderat
+från gratis LoopiaDomän-kontot som saknade DNS-editor) — en CNAME-post
+för subdomänen `packlista` pekar mot `darioswede.github.io`. Domänens
+befintliga e-post rörs inte, den låg inte på några poster i samma zon.
+
+`https://darioswede.github.io/packlista/` fortsätter fungera som förut
+(GitHub Pages dirigerar den vidare till den anpassade domänen automatiskt
+när "Enforce HTTPS" är på).
+
+**Ej gjort ännu:** `emailRedirectTo` i `app.js`s `sign-up`-hantering
+pekar fortfarande på `github.io`-adressen. Fungerar fint som den är,
+men om den ska bytas till den nya domänen måste den nya URL:en även
+läggas till i Supabases Auth-inställningar under "Redirect URLs" —
+annars slutar bekräftelselänkar i registreringsmejl fungera.
+
 ## Header (2026-07-31)
 
 `site-header` (utloggad) och `app-header` (inloggad) i `index.html` har
