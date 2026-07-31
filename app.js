@@ -204,6 +204,13 @@ function createPlanner(container, { session = null } = {}) {
     tintStatusCard(remainingCard, difference, targetGrams);
     $("[data-remaining-label]", root).textContent = difference < 0 ? "Över mål" : "Vikt kvar";
     $("[data-remaining]", root).textContent = formatWeight(Math.abs(difference));
+
+    // Startvikt and Grundvikt get the same over/under-target tint too --
+    // same difference/targetGrams as Målvikt and Vikt kvar, since it's the
+    // same underlying "are we within budget" question, just two more
+    // places it's shown.
+    tintStatusCard($("[data-total-card]", root), difference, targetGrams);
+    tintStatusCard($("[data-base-card]", root), difference, targetGrams);
   }
 
   // Density (see .planner.density-compact in styles.css) and the target-
