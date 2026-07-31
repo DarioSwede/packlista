@@ -151,8 +151,17 @@ function createPlanner(container, { session = null } = {}) {
     $("[data-base]", root).textContent = formatWeight(total - consumable);
     const weighedCount = items.filter((item) => item.weighed).length;
     $("[data-weighed]", root).textContent = `${weighedCount}/${items.length}`;
+    // Vägda: red while anything's still unweighed, back to the plain
+    // neutral/gray box once everything is (an empty list counts as "done"
+    // -- nothing left to weigh). Inköp: the reverse framing -- green while
+    // the shopping list is empty, red as soon as there's something to buy.
+    $("[data-weighed]", root).closest("article")
+      .classList.toggle("stat-alert", weighedCount < items.length);
     const missing = items.filter((item) => !item.owned);
     $("[data-missing]", root).textContent = String(missing.length);
+    const shoppingButton = $("[data-missing]", root).closest(".top-stat-button");
+    shoppingButton.classList.toggle("stat-good", missing.length === 0);
+    shoppingButton.classList.toggle("stat-alert", missing.length > 0);
     $("[data-shopping-badge]", root).textContent = String(missing.length);
     empty.hidden = items.length > 0;
     tbody.replaceChildren(...visible.map(itemRow));
