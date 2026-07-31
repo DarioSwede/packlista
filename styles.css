@@ -276,17 +276,38 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
 @media(max-width:800px){
   .hero{grid-template-columns:1fr;gap:48px;min-height:0;padding:70px 0}.hero-card{max-width:520px}
   .section-heading{display:block}.section-heading>p{margin-top:12px}
-  .planner{grid-template-columns:1fr}.planner-sidebar{border-right:0;border-bottom:1px solid var(--line);border-radius:20px 20px 0 0}
-  .planner-nav{grid-template-columns:repeat(3,1fr)}.planner-nav button{justify-content:center;gap:6px;text-align:center}
-  .planner-content{padding:20px 14px 14px}.top-stats{grid-template-columns:repeat(3,1fr);margin-bottom:18px}.toolbar{grid-template-columns:1fr 1fr}.toolbar .primary-button{grid-column:1/-1}
-  .sidebar-insights{margin-top:16px}
+  /* Mobile re-orders the whole planner into one flow instead of stacking
+     .planner-sidebar's entire contents above .planner-content's (2026-07-31)
+     -- that used to bury the actual item table under the list name, nav,
+     and both insight charts, several screens of scrolling before you
+     reached anything editable. display:contents lifts each wrapper's own
+     children up to be direct flex children of .planner, so every one of
+     them can be reordered against each other with a single `order` value
+     regardless of which original wrapper it came from. New order: list
+     name -> nav (sticky, so it's reachable while scrolling) -> save
+     status -> quick stats -> the actual table -> the two insight charts,
+     which move from second to last. */
+  .planner{display:flex;flex-direction:column;padding:20px 14px 14px}
+  .planner-sidebar,.planner-content{display:contents}
+  .planner-sidebar>div:first-child{order:1}
+  .planner-nav{order:2;position:sticky;top:0;z-index:5;background:var(--card);padding:10px 0 8px;margin:0 0 14px;grid-template-columns:repeat(3,1fr)}
+  .planner-nav button{justify-content:center;gap:6px;text-align:center}
+  .save-state-top{order:3}
+  .top-stats{order:4;grid-template-columns:repeat(3,1fr);margin-bottom:18px}
+  [data-view="packing"],[data-view="shopping"],[data-view="print"]{order:5}
+  .toolbar{grid-template-columns:1fr 1fr}.toolbar .primary-button{grid-column:1/-1}
+  .sidebar-insights{order:6;margin-top:24px}
+  /* Redundant with .save-state-top once everything's reordered -- that's
+     already right under the nav, no need for a second "Sparad ✓" further
+     down in the new flow. */
+  .planner-sidebar>p.save-state{display:none}
   .view-heading{align-items:flex-start}.print-sheet{min-height:0;padding:32px 24px}
 }
 @media(max-width:480px){
   .site-header,.app-header,.hero,.planner-section,.private-main{width:calc(100% - 24px)}
   .hero h1{font-size:48px}.lead{font-size:17px}.hero-card>strong{font-size:42px}
   .planner-section,.private-main{width:100%;margin-bottom:0}.section-heading{padding:0 12px}
-  .planner{border-left:0;border-right:0;border-radius:0}.planner-sidebar{border-radius:0}.planner-content{padding:20px 10px 14px}
+  .planner{border-left:0;border-right:0;border-radius:0;padding:20px 10px 14px}
   .top-stats{grid-template-columns:1fr 1fr;gap:8px}.top-stats article,.top-stats .top-stat-button{padding:10px 12px}.target-card{grid-column:1/-1}
   .dropdown-panel{width:min(280px,calc(100vw - 24px))}
   .planner-nav button{padding:9px 5px;font-size:12px}.view-heading{display:block}.view-heading .primary-button{width:100%;margin-top:14px}
