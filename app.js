@@ -516,6 +516,7 @@ function createPlanner(container, { session = null } = {}) {
     nameCell.append(nameWrap);
 
     const categoryCell = row.insertCell();
+    categoryCell.dataset.label = "Kategori";
     const select = document.createElement("select");
     select.setAttribute("aria-label", "Kategori");
     categories.forEach((category) => {
@@ -534,6 +535,7 @@ function createPlanner(container, { session = null } = {}) {
     categoryCell.append(select);
 
     const weightCell = row.insertCell();
+    weightCell.dataset.label = "Vikt (gram) / Vägd";
     const weightField = document.createElement("div");
     weightField.className = "weight-field";
     weightField.append(field("number", item.weight, "Vikt i gram", (value) => item.weight = value));
@@ -546,8 +548,12 @@ function createPlanner(container, { session = null } = {}) {
     );
     weightField.append(weighedLabel);
     weightCell.append(weightField);
-    row.insertCell().append(field("number", item.quantity, "Antal", (value) => item.quantity = value));
-    row.insertCell().append(field("checkbox", item.owned, "Jag har prylen", (value) => item.owned = value));
+    const quantityCell = row.insertCell();
+    quantityCell.dataset.label = "Antal";
+    quantityCell.append(field("number", item.quantity, "Antal", (value) => item.quantity = value));
+    const ownedCell = row.insertCell();
+    ownedCell.dataset.label = "Har";
+    ownedCell.append(field("checkbox", item.owned, "Jag har prylen", (value) => item.owned = value));
 
     return row;
   }
