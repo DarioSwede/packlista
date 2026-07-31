@@ -299,12 +299,20 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
      inline at the tail end of the weight cell, which is itself the row's
      last column, so it lands at the row's far right edge, still visibly
      paired with Vikt right next to it. */
+  /* minmax(0,1fr), not plain 1fr -- a bare 1fr track still respects its
+     item's min-content as an implicit floor (here, Kategori's <select>,
+     whose min-content is roughly "Elektronik"s width). On a narrow
+     enough phone that floor plus the other two auto columns add up to
+     more than the card's inner width, and the row blows out past the
+     card's own right padding/border instead of shrinking. minmax(0,1fr)
+     removes that floor so the column (and the select inside it) can
+     actually shrink down to fit. */
   tbody tr{
-    display:grid;grid-template-columns:1fr auto auto;column-gap:12px;
+    display:grid;grid-template-columns:minmax(0,1fr) auto auto;column-gap:12px;
     grid-template-areas:"name name owned" "category quantity weight";
     margin-bottom:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);
   }
-  td{border-bottom:0;padding:5px 0}
+  td{border-bottom:0;padding:5px 0;min-width:0}
   td:nth-child(1){grid-area:name}
   td:nth-child(2){grid-area:category}
   td:nth-child(3){grid-area:weight}

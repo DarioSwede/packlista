@@ -235,3 +235,15 @@ rader där den tredje bara innehöll två fält.
   `"name name owned" "category quantity weight"`. Ren CSS-omplacering
   (samma `<td>`, bara ny grid-area), ingen DOM-flytt behövdes eftersom
   Har redan var sin egen tabellcell.
+
+**Bugg samma dag:** fält-raden (Kategori/Antal/Vikt+Vägd) svämmade över
+kortets högerkant på smala skärmar -- klassisk CSS Grid-fälla. Kategoris
+kolumn var satt till plain `1fr`, men en bar `1fr`-track respekterar
+fortfarande sitt innehålls `min-content` som ett implicit golv (här:
+`<select>`ens längsta alternativ, "Elektronik", ~110-130px). Lägg ihop
+det golvet med Antal/Vikt-kolumnernas egna `auto`-bredder och summan
+kunde bli bredare än kortets faktiska innehållsyta, så raden puttade ut
+förbi paddingen till höger istället för att krympa. Fixat med
+`minmax(0,1fr)` istället för `1fr` på `tbody tr`, plus `min-width:0` på
+`td` som allmänt skydd mot samma fälla i andra celler. Verifierat live
+i en 360px-bred test-iframe mot produktionssajten innan/efter fixet.
