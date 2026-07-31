@@ -101,8 +101,17 @@ button{cursor:pointer}
 .target-card input:hover,.target-card input:focus{outline:0;border-bottom-color:var(--green)}
 .target-card b{font-size:14px}
 .target-card small{display:block;margin-top:3px;color:var(--muted);font-size:10px;white-space:nowrap}
-.target-card.over{border-color:var(--status-over-line)}.target-card.over small{color:var(--status-over-text)}
-.target-card.under{border-color:var(--status-under-line)}.target-card.under small{color:var(--green)}
+/* Whole-card tint, not just the border -- under target is a flat subtle
+   green, over target ramps from a light to a more saturated red the
+   further over you are. The over intensity comes from --over-mix, a
+   percentage app.js's renderTarget() sets per-render (see there); it's a
+   custom property rather than a class so it's a smooth gradient instead
+   of a few fixed steps. color-mix() blends against --card so it already
+   adapts to the light/dark theme with no extra work. */
+.target-card.over{border-color:var(--status-over-line);background-color:color-mix(in srgb, var(--status-over-text) var(--over-mix, 14%), var(--card))}
+.target-card.over small{color:var(--status-over-text)}
+.target-card.under{border-color:var(--status-under-line);background-color:color-mix(in srgb, var(--green) 14%, var(--card))}
+.target-card.under small{color:var(--green)}
 .toolbar{display:grid;grid-template-columns:minmax(180px,1fr) 190px 130px;gap:10px;margin-bottom:16px}
 .toolbar input,.toolbar select,.table-wrap input,.table-wrap select{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--well);color:var(--text);padding:9px}
 .days-control{display:grid;grid-template-columns:1fr 48px;align-items:center;gap:7px;border:1px solid var(--line);border-radius:8px;background:var(--well);padding:0 8px;color:var(--muted);font-size:11px;text-transform:uppercase}

@@ -155,10 +155,20 @@ function createPlanner(container, { session = null } = {}) {
 
   function renderTarget(total) {
     $("[data-target-unit]", root).textContent = weightUnitLabel();
-    const difference = (targetWeightKg * 1000) - total;
+    const targetGrams = targetWeightKg * 1000;
+    const difference = targetGrams - total;
     const card = $("[data-target-card]", root);
     card.classList.toggle("over", difference < 0);
     card.classList.toggle("under", difference >= 0);
+    // How red the card gets scales with how far over you are, relative to
+    // the target itself (packing double your target weight or more maxes
+    // it out). Expressed as a color-mix() percentage set via a custom
+    // property rather than a fixed class -- see .target-card.over in
+    // styles.css -- so it's a smooth gradient, not a handful of steps.
+    if (difference < 0 && targetGrams > 0) {
+      const overRatio = Math.min(1, -difference / targetGrams);
+      card.style.setProperty("--over-mix", `${Math.round(14 + overRatio * 46)}%`);
+    }
     $("[data-target-status]", root).textContent = `${formatWeight(Math.abs(difference))} ${difference < 0 ? "över" : "under"} mål`;
   }
 
