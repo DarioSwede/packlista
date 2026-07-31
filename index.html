@@ -18,7 +18,7 @@
       if (storedPrefs.theme === "light") document.documentElement.classList.add("theme-light");
     } catch (e) { /* ignore malformed/blocked storage */ }
   </script>
-  <link rel="stylesheet" href="styles.css?v=25">
+  <link rel="stylesheet" href="styles.css?v=26">
 </head>
 <body>
   <div id="signed-out">
@@ -124,8 +124,10 @@
         <div class="dropdown" data-dropdown>
           <button class="avatar-button" id="account-toggle" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Konto"></button>
           <div class="dropdown-panel account-panel" data-dropdown-panel hidden>
+            <p class="dropdown-label">Inloggad som</p>
             <p class="dropdown-heading" id="account-email"></p>
             <p class="passkey-status" id="passkey-status"></p>
+            <button class="quiet-button" id="open-account-settings">Kontoinställningar</button>
             <button class="quiet-button" id="register-passkey">Registrera YubiKey</button>
             <button class="quiet-button" id="sign-out">Logga ut</button>
           </div>
@@ -153,6 +155,32 @@
       <div class="auth-divider"><span>eller</span></div>
       <button class="secondary-button" id="passkey-sign-in">Logga in med säkerhetsnyckel</button>
       <p class="form-message" id="auth-message" aria-live="polite"></p>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="account-settings-modal" hidden>
+    <section class="login-card" role="dialog" aria-modal="true" aria-labelledby="account-settings-title">
+      <button class="close-button" id="close-account-settings" aria-label="Stäng">×</button>
+      <p class="eyebrow">Konto</p>
+      <h2 id="account-settings-title">Kontoinställningar</h2>
+      <form id="rename-form">
+        <label for="display-name">Namn</label>
+        <input id="display-name" type="text" maxlength="60" autocomplete="name" placeholder="Ditt namn">
+        <button class="secondary-button" type="submit">Byt namn</button>
+      </form>
+      <div class="auth-divider"><span>lösenord</span></div>
+      <form id="password-form">
+        <label for="current-password">Nuvarande lösenord</label>
+        <input id="current-password" type="password" autocomplete="current-password" required>
+        <label for="new-password">Nytt lösenord</label>
+        <input id="new-password" type="password" autocomplete="new-password" minlength="6" required>
+        <label for="confirm-password">Bekräfta nytt lösenord</label>
+        <input id="confirm-password" type="password" autocomplete="new-password" minlength="6" required>
+        <button class="secondary-button" type="submit">Byt lösenord</button>
+      </form>
+      <p class="form-message" id="account-settings-message" aria-live="polite"></p>
+      <div class="auth-divider"><span>farozon</span></div>
+      <button class="secondary-button danger-button" type="button" id="delete-account">Ta bort konto</button>
     </section>
   </div>
 
@@ -202,12 +230,19 @@
         <p class="save-state" data-save-state></p>
       </aside>
       <div class="planner-content">
+        <p class="save-state save-state-top" data-save-state aria-live="polite"></p>
         <section class="top-stats" aria-label="Viktsammanfattning">
           <article><span>Startvikt</span><strong data-total>0,00 kg</strong></article>
           <article><span>Grundvikt</span><strong data-base>0,00 kg</strong></article>
           <article><span>Vägda</span><strong data-weighed>0/0</strong></article>
-          <article><span>Inköp</span><strong data-missing>0</strong></article>
-          <article class="target-card" data-target-card>
+          <button type="button" class="top-stat-button" data-view-button="shopping" aria-label="Gå till inköpslistan">
+            <span>Inköp</span><strong data-missing>0</strong>
+          </button>
+          <article class="status-card" data-remaining-card>
+            <span data-remaining-label>Vikt kvar</span>
+            <strong data-remaining>0,00 kg</strong>
+          </article>
+          <article class="target-card status-card" data-target-card>
             <label for="target-weight">Målvikt</label>
             <div>
               <input id="target-weight" data-target-weight type="number" min="0" max="100" step="0.1" value="10" aria-label="Målvikt">
@@ -317,6 +352,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=22"></script>
+  <script type="module" src="app.js?v=23"></script>
 </body>
 </html>

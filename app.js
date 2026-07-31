@@ -113,7 +113,16 @@ function createPlanner(container, { session = null } = {}) {
 
   const tbody = $("[data-items-body]", root);
   const empty = $("[data-empty]", root);
-  const saveState = $("[data-save-state]", root);
+  // Two [data-save-state] elements exist now -- one tucked in the sidebar
+  // (easy to miss, especially with the sidebar collapsed to the bottom on
+  // mobile) and one right above .top-stats so the save status is visible
+  // without scrolling. This fans every assignment out to both instead of
+  // making every call site below know there are two.
+  const saveState = {
+    set textContent(value) {
+      root.querySelectorAll("[data-save-state]").forEach((el) => { el.textContent = value; });
+    },
+  };
   const filterSelect = $("[data-category-filter]", root);
   const shoppingList = $("[data-shopping-list]", root);
   const shoppingEmpty = $("[data-shopping-empty]", root);
@@ -153,23 +162,39 @@ function createPlanner(container, { session = null } = {}) {
     renderPrint(total, total - consumable, missing.length);
   }
 
-  function renderTarget(total) {
-    $("[data-target-unit]", root).textContent = weightUnitLabel();
-    const targetGrams = targetWeightKg * 1000;
-    const difference = targetGrams - total;
-    const card = $("[data-target-card]", root);
+  // Shared by the editable Målvikt card and the plain read-only Vikt-kvar
+  // card next to it -- both need the same over/under tint (see .status-card
+  // in styles.css), just applied to different elements since they're
+  // separate boxes in the top-stats row.
+  function tintStatusCard(card, difference, targetGrams) {
     card.classList.toggle("over", difference < 0);
     card.classList.toggle("under", difference >= 0);
     // How red the card gets scales with how far over you are, relative to
     // the target itself (packing double your target weight or more maxes
     // it out). Expressed as a color-mix() percentage set via a custom
-    // property rather than a fixed class -- see .target-card.over in
-    // styles.css -- so it's a smooth gradient, not a handful of steps.
+    // property rather than a fixed class, so it's a smooth gradient
+    // instead of a handful of steps.
     if (difference < 0 && targetGrams > 0) {
       const overRatio = Math.min(1, -difference / targetGrams);
       card.style.setProperty("--over-mix", `${Math.round(14 + overRatio * 46)}%`);
     }
+  }
+
+  function renderTarget(total) {
+    $("[data-target-unit]", root).textContent = weightUnitLabel();
+    const targetGrams = targetWeightKg * 1000;
+    const difference = targetGrams - total;
+    tintStatusCard($("[data-target-card]", root), difference, targetGrams);
     $("[data-target-status]", root).textContent = `${formatWeight(Math.abs(difference))} ${difference < 0 ? "över" : "under"} mål`;
+
+    // Vikt kvar -- the same headroom the Målvikt card's small-text already
+    // states, just surfaced as its own prominent top-stats box too (Tor
+    // wanted it visible "i toppen" without having to read the fine print
+    // under the target-weight input).
+    const remainingCard = $("[data-remaining-card]", root);
+    tintStatusCard(remainingCard, difference, targetGrams);
+    $("[data-remaining-label]", root).textContent = difference < 0 ? "Över mål" : "Vikt kvar";
+    $("[data-remaining]", root).textContent = formatWeight(Math.abs(difference));
   }
 
   // Density (see .planner.density-compact in styles.css) and the target-
@@ -909,6 +934,98 @@ $("#register-passkey").addEventListener("click", async () => {
 
 $("#sign-out").addEventListener("click", () => supabase.auth.signOut());
 
+// ---- Account Settings modal (byt namn / byt lösenord / ta bort konto) --
+// same modal-backdrop/login-card pattern as #login-modal above.
+// currentSession is set from onAuthStateChange further down, since that's
+// the only place a live session is available at this scope; every handler
+// here bails out harmlessly if it's somehow null (shouldn't happen, the
+// "Kontoinställningar" button only exists in the signed-in header).
+let currentSession = null;
+const accountSettingsModal = $("#account-settings-modal");
+const accountMessage = $("#account-settings-message");
+const openAccountSettingsModal = async () => {
+  accountMessage.textContent = "";
+  $("#password-form").reset();
+  accountSettingsModal.hidden = false;
+  if (!currentSession) return;
+  const { data, error } = await supabase.from("users")
+    .select("display_name").eq("id", currentSession.user.id).maybeSingle();
+  $("#display-name").value = error ? "" : (data?.display_name || "");
+};
+const closeAccountSettingsModal = () => { accountSettingsModal.hidden = true; };
+
+$("#open-account-settings").addEventListener("click", () => {
+  // The button lives inside the account dropdown panel -- close that
+  // panel explicitly since it's not a click "outside" the dropdown from
+  // initDropdowns()' point of view (the click target is inside it).
+  const panel = $("#open-account-settings").closest("[data-dropdown-panel]");
+  if (panel) panel.hidden = true;
+  $("#account-toggle").setAttribute("aria-expanded", "false");
+  openAccountSettingsModal();
+});
+$("#close-account-settings").addEventListener("click", closeAccountSettingsModal);
+accountSettingsModal.addEventListener("click", (event) => {
+  if (event.target === accountSettingsModal) closeAccountSettingsModal();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !accountSettingsModal.hidden) closeAccountSettingsModal();
+});
+
+$("#rename-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!currentSession) return;
+  const name = $("#display-name").value.trim();
+  accountMessage.textContent = "Sparar namn…";
+  const { error } = await supabase.from("users")
+    .update({ display_name: name, updated_at: new Date().toISOString() })
+    .eq("id", currentSession.user.id);
+  // Needs supabase/migrations/0024_account_settings.sql run (it re-grants
+  // UPDATE on display_name -- 0022 had revoked it entirely) or this fails
+  // with a permission error every time.
+  accountMessage.textContent = error ? `Kunde inte byta namn: ${error.message}` : "Namnet är uppdaterat ✓";
+});
+
+$("#password-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!currentSession) return;
+  const current = $("#current-password").value;
+  const next = $("#new-password").value;
+  const confirm = $("#confirm-password").value;
+  if (next !== confirm) {
+    accountMessage.textContent = "De nya lösenorden matchar inte.";
+    return;
+  }
+  accountMessage.textContent = "Byter lösenord…";
+  // supabase.auth.updateUser() alone doesn't check the current password --
+  // it trusts whatever session is active. Re-authenticating first (rather
+  // than just trusting the "Nuvarande lösenord" field blindly) is what
+  // actually verifies it's correct before allowing the change.
+  const verify = await supabase.auth.signInWithPassword({ email: currentSession.user.email, password: current });
+  if (verify.error) {
+    accountMessage.textContent = "Fel nuvarande lösenord.";
+    return;
+  }
+  const { error } = await supabase.auth.updateUser({ password: next });
+  accountMessage.textContent = error ? `Kunde inte byta lösenord: ${error.message}` : "Lösenordet är uppdaterat ✓";
+  if (!error) $("#password-form").reset();
+});
+
+$("#delete-account").addEventListener("click", async () => {
+  if (!currentSession) return;
+  if (!window.confirm("Ta bort kontot och all packlistedata permanent? Det går inte att ångra.")) return;
+  accountMessage.textContent = "Tar bort konto…";
+  // Calls the delete_own_account() security-definer function from
+  // 0024_account_settings.sql -- there's no client-safe way to delete
+  // your own auth.users row directly (auth.* isn't exposed to PostgREST).
+  const { error } = await supabase.rpc("delete_own_account");
+  if (error) {
+    accountMessage.textContent = `Kunde inte ta bort kontot: ${error.message}`;
+    return;
+  }
+  await supabase.auth.signOut();
+  window.location.reload();
+});
+
 // ---- header dropdowns (settings gear, account avatar) -- one generic
 // implementation for both, driven entirely by the [data-dropdown]/
 // [data-dropdown-panel] markup in index.html rather than per-button
@@ -979,6 +1096,7 @@ initSettingsControls();
 
 createPlanner($("#guest-planner"));
 supabase.auth.onAuthStateChange((_event, session) => {
+  currentSession = session;
   $("#signed-out").hidden = Boolean(session);
   $("#signed-in").hidden = !session;
   if (session) {

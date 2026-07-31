@@ -28,6 +28,8 @@ button{cursor:pointer}
 .brand{color:var(--text);font-size:16px;font-weight:800;letter-spacing:.05em;text-decoration:none}
 .quiet-button,.secondary-button{border:1px solid var(--line);border-radius:9px;background:transparent;color:inherit;padding:9px 14px}
 .quiet-button:hover,.secondary-button:hover{border-color:var(--green);color:var(--green)}
+.danger-button{border-color:var(--danger-line);color:var(--danger-text)}
+.danger-button:hover{border-color:var(--danger-line-hover);background:var(--danger-bg);color:var(--danger-text)}
 
 /* ---- header dropdowns: settings (gear) + account (avatar), both
    headers -- generic [data-dropdown]/[data-dropdown-panel] wiring lives
@@ -38,6 +40,7 @@ button{cursor:pointer}
 .avatar-button{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:99px;background:var(--accent-soft);color:var(--green);font-weight:800;font-size:14px;padding:0;text-transform:uppercase}
 .avatar-button:hover,.avatar-button[aria-expanded="true"]{border-color:var(--green)}
 .dropdown-panel{position:absolute;top:calc(100% + 8px);right:0;z-index:25;width:250px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.dropdown-label{margin:0 0 2px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
 .dropdown-heading{margin:0 0 10px;color:var(--text);font-size:13px;font-weight:700;overflow-wrap:anywhere}
 .dropdown-panel .passkey-status{display:block;margin:0 0 12px}
 .dropdown-panel .quiet-button{display:block;width:100%;margin-top:8px;text-align:center}
@@ -87,15 +90,30 @@ button{cursor:pointer}
 .planner-nav button:hover,.planner-nav button.active{border-color:var(--line);background:var(--hover)}
 .planner-nav span{min-width:23px;border-radius:99px;background:var(--line);padding:2px 7px;color:var(--green);font-size:11px;text-align:center}
 .save-state{color:var(--muted);font-size:12px}
+/* Duplicate of the sidebar save-state, placed above .top-stats so it's
+   visible without scrolling to the sidebar (easy to miss there, especially
+   on mobile where the sidebar sits below the table). Both elements share
+   [data-save-state] and get updated together -- see the saveState setter
+   in app.js's createPlanner(). Empty text collapses the line to nothing
+   via :empty so it doesn't reserve blank space before the first save. */
+.save-state-top{display:block;min-height:1em;margin:0 0 10px;text-align:right;font-weight:600}
+.save-state-top:empty{display:none}
 .planner-content{min-width:0;padding:28px 24px 24px}
 /* Used to be pulled up 18px to overlap the planner's top edge -- read as
    the stats "hanging" right at the seam with nothing above them for
    breathing room. Plain in-flow now, with .planner-content's own top
    padding (above) doing the spacing job instead of a negative transform. */
-.top-stats{position:relative;z-index:2;display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:12px;margin:0 0 20px}
-.top-stats article{min-width:0;border:1px solid var(--line);border-radius:13px;background:var(--card);padding:11px 15px;box-shadow:0 12px 28px rgba(0,0,0,.18)}
+.top-stats{position:relative;z-index:2;display:grid;grid-template-columns:repeat(6,minmax(105px,1fr));gap:12px;margin:0 0 20px}
+.top-stats article,.top-stats .top-stat-button{min-width:0;border:1px solid var(--line);border-radius:13px;background:var(--card);padding:11px 15px;box-shadow:0 12px 28px rgba(0,0,0,.18)}
 .top-stats span,.top-stats label{display:block;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
 .top-stats strong{display:block;margin-top:4px;font-size:20px;white-space:nowrap}
+/* Inköp is a real <button> now (goes to the shopping view on click) --
+   reset the button-specific defaults browsers add so it matches the
+   plain <article> boxes next to it pixel for pixel, then layer on a
+   hover/focus affordance so it still reads as clickable. */
+.top-stats .top-stat-button{width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;transition:border-color .12s ease}
+.top-stats .top-stat-button:hover,.top-stats .top-stat-button:focus-visible{border-color:var(--green)}
+.top-stats .top-stat-button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 .target-card div{display:flex;align-items:baseline;gap:4px;margin-top:2px}
 .target-card input{width:70px;border:0;border-bottom:1px solid transparent;background:transparent;color:var(--text);padding:0;font-size:20px;font-weight:800}
 .target-card input:hover,.target-card input:focus{outline:0;border-bottom-color:var(--green)}
@@ -108,10 +126,16 @@ button{cursor:pointer}
    custom property rather than a class so it's a smooth gradient instead
    of a few fixed steps. color-mix() blends against --card so it already
    adapts to the light/dark theme with no extra work. */
-.target-card.over{border-color:var(--status-over-line);background-color:color-mix(in srgb, var(--status-over-text) var(--over-mix, 14%), var(--card))}
-.target-card.over small{color:var(--status-over-text)}
-.target-card.under{border-color:var(--status-under-line);background-color:color-mix(in srgb, var(--green) 14%, var(--card))}
-.target-card.under small{color:var(--green)}
+/* .status-card is shared by the editable Målvikt box and the plain
+   read-only Vikt-kvar box next to it -- both need the same over/under
+   tinting, only Målvikt additionally needs the input/label/small layout
+   below (.target-card). --over-mix is set per-element by
+   renderTarget() in app.js, so the two boxes tint independently even
+   though they're driven by the same underlying difference value. */
+.status-card.over{border-color:var(--status-over-line);background-color:color-mix(in srgb, var(--status-over-text) var(--over-mix, 14%), var(--card))}
+.status-card.over small{color:var(--status-over-text)}
+.status-card.under{border-color:var(--status-under-line);background-color:color-mix(in srgb, var(--green) 14%, var(--card))}
+.status-card.under small{color:var(--green)}
 .toolbar{display:grid;grid-template-columns:minmax(180px,1fr) 190px 130px;gap:10px;margin-bottom:16px}
 .toolbar input,.toolbar select,.table-wrap input,.table-wrap select{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--well);color:var(--text);padding:9px}
 .days-control{display:grid;grid-template-columns:1fr 48px;align-items:center;gap:7px;border:1px solid var(--line);border-radius:8px;background:var(--well);padding:0 8px;color:var(--muted);font-size:11px;text-transform:uppercase}
@@ -208,7 +232,7 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
    to one planner instance's own row spacing without touching anything
    outside it. Comfortable (the pre-existing spacing) needs no class. ---- */
 .planner.density-compact th,.planner.density-compact td{padding:5px 8px}
-.planner.density-compact .top-stats article{padding:8px 12px}
+.planner.density-compact .top-stats article,.planner.density-compact .top-stats .top-stat-button{padding:8px 12px}
 .planner.density-compact .top-stats strong{font-size:17px}
 .planner.density-compact .insight-card{padding:12px}
 .planner.density-compact .shopping-item{padding:9px 12px}
@@ -250,7 +274,7 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
   .hero h1{font-size:48px}.lead{font-size:17px}.hero-card>strong{font-size:42px}
   .planner-section,.private-main{width:100%;margin-bottom:0}.section-heading{padding:0 12px}
   .planner{border-left:0;border-right:0;border-radius:0}.planner-sidebar{border-radius:0}.planner-content{padding:20px 10px 14px}
-  .top-stats{grid-template-columns:1fr 1fr;gap:8px}.top-stats article{padding:10px 12px}.target-card{grid-column:1/-1}
+  .top-stats{grid-template-columns:1fr 1fr;gap:8px}.top-stats article,.top-stats .top-stat-button{padding:10px 12px}.target-card{grid-column:1/-1}
   .dropdown-panel{width:min(280px,calc(100vw - 24px))}
   .planner-nav button{padding:9px 5px;font-size:12px}.view-heading{display:block}.view-heading .primary-button{width:100%;margin-top:14px}
   .shopping-item{align-items:flex-start}.print-sheet{padding:24px 14px}.print-summary{display:grid;grid-template-columns:1fr 1fr}

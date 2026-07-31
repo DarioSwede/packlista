@@ -104,3 +104,49 @@ skärmläsare påverkas inte av att de är visuellt gömda.
 Kamera-/länk-ikonerna i referensbilden (bild på prylen, köplänk) är
 medvetet inte med i detta — separat funktion, tas senare om det blir
 aktuellt.
+
+## Sparad-indikering, topp-rutor och kontoinställningar (2026-07-31)
+
+- **Sparad-indikering syns nu även högst upp**, inte bara nere i
+  sidopanelen (lätt att missa där, särskilt på mobil där sidopanelen
+  hamnar under tabellen). `[data-save-state]` finns nu på två ställen i
+  `#planner-template`; `saveState` i `app.js` är inte längre en direkt
+  elementreferens utan ett litet objekt med en `set textContent`
+  som uppdaterar båda samtidigt, så alla befintliga anrop
+  (`saveState.textContent = "…"`) fungerade oförändrat.
+- **"Vikt kvar"** är en ny ruta i `.top-stats`, bredvid Målvikt. Visar
+  samma mellanskillnad som redan fanns som liten text under
+  Målvikt-fältet, bara mer framträdande. Färgas grönt/rött med samma
+  `.status-card`-logik som Målvikt-rutan (se förra avsnittet om
+  gradient-tonen) — `tintStatusCard()` i `app.js` är den delade
+  hjälpfunktionen båda rutorna nu använder.
+- **Inköp-rutan är en `<button>`** med `data-view-button="shopping"` nu
+  istället för en `<article>` — plockas upp automatiskt av samma
+  generiska `[data-view-button]`-koppling som flikarna i sidopanelen
+  redan använde, så inget nytt event-lager behövdes.
+- **"Inloggad som"** är en ny liten etikett ovanför e-postadressen i
+  kontodropdownen (`.dropdown-label`).
+- **Kontoinställningar** är en ny modal (`#account-settings-modal`,
+  öppnas via en ny knapp i kontodropdownen), tre separata delar:
+  - *Byt namn* skriver till `public.users.display_name`. Kräver att
+    `supabase/migrations/0024_account_settings.sql` har körts —
+    0022 hade av misstag stängt av ALL uppdatering av `users`-tabellen
+    (för att stoppa självpåtagen admin-roll via `role`-kolumnen), vilket
+    också råkade blockera det här. Migrationen öppnar bara upp
+    `display_name`/`updated_at`, `id`/`role` går fortfarande inte att
+    ändra från klienten.
+  - *Byt lösenord* verifierar det nuvarande lösenordet genom att faktiskt
+    logga in med det (`signInWithPassword`) innan
+    `supabase.auth.updateUser({password})` anropas — annars byter
+    Supabase lösenord utan att bry sig om vad du skrev i "Nuvarande
+    lösenord" alls, det fältet skulle annars vara rent kosmetiskt.
+  - *Ta bort konto* anropar en ny säkerhets-definer-funktion,
+    `public.delete_own_account()` (samma migration 0024). Klienten kan
+    inte radera sin egen `auth.users`-rad direkt (den tabellen exponeras
+    inte via PostgREST alls), så funktionen kör med ägarens rättigheter
+    och tar bort exakt `auth.uid()` — aldrig någon annans rad. Kaskaderar
+    automatiskt genom `public.users → packing_lists → packing_items`/
+    `templates` via `on delete cascade` från 0020.
+
+**Måste köras i Supabase SQL-editorn innan detta funkar fullt ut:**
+`supabase/migrations/0024_account_settings.sql`.
