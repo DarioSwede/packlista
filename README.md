@@ -352,3 +352,29 @@ samma teknik i `.weight-field`s `grid-template-columns`. Verifierat
 ("Bo") och längsta ("Elektronik") kategorinamnet -- 0px överlapp i
 båda, och "Bränsle"/"Elektronik" visas nu i sin helhet istället för
 "...".
+
+**Åttonde rundan samma dag:** två sista finjusteringar.
+
+- **Vägds text flyttade från bredvid till ovanför sin kryssruta** --
+  läser nu som en fjärde rubrik i samma rad som Kategori/Antal/Vikt
+  istället för en lös bisats till höger. `.weight-field .weighed-check`
+  fick samma typografi som `td[data-label]::before` (10px, versaler,
+  bokstavsmellanrum) och `flex-direction:column-reverse` -- DOM-
+  ordningen i `itemRow()` är fortfarande kryssruta-sedan-text (det
+  ordningen skrivbordsvyn vill ha), så `column-reverse` visar bara sista
+  barnet (texten) först utan att `app.js` behövde ändras.
+- **Har-knappen flyttade till namnraden, direkt efter radera** --
+  `td:nth-child(1)` (namncellen) gick från `flex:1 1 90px` (växte för
+  att fylla hela rad 2, vilket sköt Har hela vägen till radens
+  högerkant) till `flex:0 1 auto` (krymper till sitt eget innehålls
+  bredd). Eftersom Har (`order:6`) redan låg direkt efter namnet
+  (`order:5`) i ordning räckte det -- de hamnar nu sida vid sida med
+  bara den vanliga kolumnmellanrummet (8px) emellan, verifierat mätt.
+  Texten "Har" är tillbaka bredvid kryssrutan (till vänster om den,
+  läsordning), men bara på mobil -- ett nytt generiskt
+  `.mobile-only-text`-hjälpklass (`display:none` som grundläge, `inline`
+  i 700px-brytpunkten) håller den borta på skrivbordet, som redan har en
+  egen `<th>Har</th>`-kolumnrubrik och inte behöver ordet upprepat i
+  varje cell. Den gamla "HAR"-pseudo-rubriken (`::before`) är dold för
+  den här cellen nu istället, för att inte visa samma ord två gånger
+  igen.

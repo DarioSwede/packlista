@@ -192,6 +192,11 @@ th abbr{text-decoration:none;cursor:help}
 .table-wrap th:first-child{z-index:3}
 td:nth-child(5){text-align:center}td input[type=checkbox]{width:auto}
 td input[type=checkbox]:disabled{cursor:not-allowed;opacity:.25}
+/* Hidden by default (desktop already has a <th>Har</th> column header,
+   so repeating "Har" inside every cell would just be clutter there) --
+   the 700px breakpoint switches this back on for labels that only make
+   sense once the table becomes mobile cards. */
+.mobile-only-text{display:none}
 /* flex, not grid -- flex items shrink together properly (with min-width:0,
    see below) instead of grid's "auto"/"1fr" tracks silently keeping a
    content-sized floor that can overflow the row on a narrow phone. */
@@ -317,7 +322,12 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
   }
   tbody tr::after{content:"";order:4;flex-basis:100%}
   td{border-bottom:0;padding:0;min-width:0}
-  td:nth-child(1){flex:1 1 90px;order:5} /* namn */
+  /* namn -- flex-grow:0 now (was 1) so it hugs its own content instead
+     of stretching to fill row 2, which used to shove Har all the way to
+     the row's far right edge. With no grow, Har (order:6, right after)
+     lands snug next to the delete button instead, per Tor. */
+  td:nth-child(1){flex:0 1 auto;order:5} /* namn */
+  .mobile-only-text{display:inline}
   /* Row 1's three fields split proportionally now (Tor: "40, 25, 25, 10"
      of Kategori/Antal/Vikt/Vägd) instead of Kategori taking whatever was
      left over after Antal+Vikt's fixed pixel widths -- flex-grow ratios
@@ -337,6 +347,10 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
      from the field group above it. */
   .table-wrap th:first-child,.table-wrap td:first-child{position:static;min-width:0;background:transparent;box-shadow:none;padding-top:5px;border-top:1px solid var(--line)}
   td[data-label]::before{content:attr(data-label);display:block;margin-bottom:3px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
+  /* Har went back to an inline "Har" label next to its checkbox (see
+     itemRow()'s .mobile-only-text span) instead of this pseudo-heading
+     -- showing both would be the same word twice again. */
+  td[data-label="Har"]::before{display:none}
   /* Antal/Kategori/Vikt fill whatever width their td's flex-grow ratio
      (above) actually gave them, instead of a guessed fixed pixel width
      -- width:100% always matches the real container, so it can't repeat
@@ -349,8 +363,18 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
      (=25:10) via the same flex-grow-ratio approach as the outer row,
      so the split holds regardless of how wide that td ends up being.
      Overrides the desktop .weight-field's minmax(86px,1fr) column. */
-  .weight-field{grid-template-columns:5fr 2fr;column-gap:5px}
-  .weight-field .weighed-check{min-width:0}
+  .weight-field{grid-template-columns:5fr 2fr;column-gap:5px;align-items:end}
+  /* Vägd's text moves from beside its checkbox to above it, matching
+     Kategori/Antal/Vikt's label-above-control pattern so all four read
+     as one header row -- column-reverse displays the *last* DOM child
+     first without touching itemRow() (the checkbox is appended before
+     the "Vägd" text node there, for the desktop row-layout order).
+     Typography copied from td[data-label]::before above so it actually
+     reads as part of the same header band, not a smaller aside. */
+  .weight-field .weighed-check{
+    min-width:0;flex-direction:column-reverse;align-items:flex-start;row-gap:3px;
+    font-size:10px;text-transform:uppercase;letter-spacing:.05em;
+  }
   td:nth-child(5){display:flex;align-items:center;text-align:left}
 }
 /* Hover-revealed item-action buttons (Förbrukas/Bärs på kroppen/Favorit,

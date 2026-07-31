@@ -583,15 +583,21 @@ function createPlanner(container, { session = null } = {}) {
     quantityCell.append(quantityInput);
     const ownedCell = row.insertCell();
     ownedCell.dataset.label = "Har";
-    // No visible text next to the checkbox -- the "HAR" pseudo-heading
-    // above it (from data-label, same as every other mobile field) already
-    // says what it is, so a second "Har" right below was pure repetition.
-    // Still wrapped in a <label> (not just the bare input) purely to
-    // enlarge the tap target -- the checkbox's own aria-label covers
-    // accessibility either way.
+    // "Har" as a real element (not a bare text node) so the mobile
+    // stylesheet can show it -- desktop already has a <th>Har</th>
+    // column header, so a second "Har" inside every cell would just be
+    // clutter there; .mobile-only-text hides it above the 700px
+    // breakpoint (see styles.css). Text comes before the checkbox (not
+    // after, like Vägd) since on mobile this cell sits right next to the
+    // delete button on the name row, reading left-to-right as a label
+    // for what follows.
     const ownedLabel = document.createElement("label");
     ownedLabel.className = "weighed-check";
+    const ownedText = document.createElement("span");
+    ownedText.className = "mobile-only-text";
+    ownedText.textContent = "Har";
     ownedLabel.append(
+      ownedText,
       field("checkbox", item.owned, "Jag har prylen", (value) => item.owned = value),
     );
     ownedCell.append(ownedLabel);
