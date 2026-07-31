@@ -26,7 +26,58 @@ const CONSUMABLE_CATEGORIES = new Set(["mat", "vatten", "bransle"]);
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const uid = () => crypto.randomUUID();
-const kg = (grams) => `${((Number(grams) || 0) / 1000).toLocaleString("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg`;
+
+// ---- preferences: unit system (weight only -- this app doesn't track
+// volume anywhere) and list density. Per-browser (localStorage), not
+// per-account: a display preference like this is reasonable to keep even
+// for the unsaved guest demo, and doesn't need to follow you across
+// devices the way the actual packing list data does.
+const PREFS_KEY = "packlista-prefs";
+function loadPrefs() {
+  let stored = {};
+  try { stored = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}"); } catch { /* ignore malformed/blocked storage */ }
+  return {
+    unit: stored.unit === "us" ? "us" : "metric",
+    density: stored.density === "compact" ? "compact" : "comfortable",
+  };
+}
+let prefs = loadPrefs();
+function savePrefs() {
+  try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch { /* ignore malformed/blocked storage */ }
+}
+
+const KG_PER_LB = 0.45359237;
+const G_PER_LB = KG_PER_LB * 1000;
+function weightUnitLabel() { return prefs.unit === "us" ? "lb" : "kg"; }
+// Item-level weight entry (the "Vikt (gram)" table column) stays in
+// grams regardless of unit setting -- grams are the practical unit for
+// weighing individual gear on a kitchen scale either way, and converting
+// that one field back and forth on every keystroke isn't worth the risk
+// of rounding drift. Only the aggregate/summary numbers below (totals,
+// forecast, print, target weight) respect the US/metric choice.
+function formatWeight(grams) {
+  const value = Number(grams) || 0;
+  const shown = prefs.unit === "us" ? value / G_PER_LB : value / 1000;
+  return `${shown.toLocaleString("sv-SE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${weightUnitLabel()}`;
+}
+// Target weight is edited directly (a number input, not just displayed),
+// so it needs the round-trip: stored internally in kg same as always,
+// converted to the displayed unit for the input's value and back to kg
+// when read from it.
+function kgToDisplayUnit(kgValue) { return prefs.unit === "us" ? kgValue / KG_PER_LB : kgValue; }
+function displayUnitToKg(value) { return prefs.unit === "us" ? value * KG_PER_LB : value; }
+
+// Every mounted planner (guest demo, private -- see the two
+// createPlanner() calls at the bottom of this file) registers its own
+// applyPrefs() here so a settings-dropdown change can refresh whichever
+// of them currently exist, without either needing to know about the
+// other. A stale entry from an instance that's since been replaced (see
+// createPlanner's onAuthStateChange handling) is harmless: it just
+// touches detached, invisible DOM.
+const plannerRefreshers = new Set();
+function refreshAllPlanners() {
+  plannerRefreshers.forEach((refresh) => refresh());
+}
 
 function createPlanner(container, { session = null } = {}) {
   const root = document.importNode($("#planner-template").content, true).firstElementChild;
@@ -68,8 +119,8 @@ function createPlanner(container, { session = null } = {}) {
       .filter((item) => item.consumable && CONSUMABLE_CATEGORIES.has(item.category))
       .reduce((sum, item) => sum + itemTotal(item), 0);
 
-    $("[data-total]", root).textContent = kg(total);
-    $("[data-base]", root).textContent = kg(total - consumable);
+    $("[data-total]", root).textContent = formatWeight(total);
+    $("[data-base]", root).textContent = formatWeight(total - consumable);
     const weighedCount = items.filter((item) => item.weighed).length;
     $("[data-weighed]", root).textContent = `${weighedCount}/${items.length}`;
     const missing = items.filter((item) => !item.owned);
@@ -84,12 +135,34 @@ function createPlanner(container, { session = null } = {}) {
   }
 
   function renderTarget(total) {
+    $("[data-target-unit]", root).textContent = weightUnitLabel();
     const difference = (targetWeightKg * 1000) - total;
     const card = $("[data-target-card]", root);
     card.classList.toggle("over", difference < 0);
     card.classList.toggle("under", difference >= 0);
-    $("[data-target-status]", root).textContent = `${kg(Math.abs(difference))} ${difference < 0 ? "över" : "under"} mål`;
+    $("[data-target-status]", root).textContent = `${formatWeight(Math.abs(difference))} ${difference < 0 ? "över" : "under"} mål`;
   }
+
+  // Density (see .planner.density-compact in styles.css) and the target-
+  // weight input's unit both need to react live to a prefs change, not
+  // just at load -- called both at startup and whenever the settings
+  // dropdown changes prefs (see plannerRefreshers below).
+  function applyDensity() {
+    root.classList.toggle("density-compact", prefs.density === "compact");
+  }
+  function applyTargetWeightUnit() {
+    const input = $("[data-target-weight]", root);
+    const isUs = prefs.unit === "us";
+    input.max = isUs ? "220" : "100";
+    input.step = isUs ? "0.5" : "0.1";
+    input.value = kgToDisplayUnit(targetWeightKg).toFixed(2);
+  }
+  function applyPrefs() {
+    applyDensity();
+    applyTargetWeightUnit();
+    render();
+  }
+  plannerRefreshers.add(applyPrefs);
 
   function categoryName(id) {
     const category = categories.find((candidate) => candidate.id === id);
@@ -116,7 +189,7 @@ function createPlanner(container, { session = null } = {}) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
     svg.setAttribute("role", "img");
-    svg.setAttribute("aria-label", `Viktprognos från ${kg(total)} till ${kg(endWeight)} under ${days} dagar`);
+    svg.setAttribute("aria-label", `Viktprognos från ${formatWeight(total)} till ${formatWeight(endWeight)} under ${days} dagar`);
     const area = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
     area.setAttribute("points", `${coords.map((point) => point.join(",")).join(" ")} ${width - padding},${height - padding} ${padding},${height - padding}`);
     area.setAttribute("class", "forecast-area");
@@ -136,9 +209,9 @@ function createPlanner(container, { session = null } = {}) {
     forecast.replaceChildren(svg);
     const summary = $("[data-forecast-summary]", root);
     const summaryValues = [
-      ["Startvikt", kg(total)],
-      ["Förbrukas", kg(consumable)],
-      [`Dag ${days}`, kg(endWeight)],
+      ["Startvikt", formatWeight(total)],
+      ["Förbrukas", formatWeight(consumable)],
+      [`Dag ${days}`, formatWeight(endWeight)],
     ];
     summary.replaceChildren(...summaryValues.map(([label, value]) => {
       const metric = document.createElement("div");
@@ -158,14 +231,14 @@ function createPlanner(container, { session = null } = {}) {
       const label = document.createElement("span");
       label.textContent = `Dag ${index + 1}`;
       const amount = document.createElement("strong");
-      amount.textContent = kg(weight);
+      amount.textContent = formatWeight(weight);
       day.append(label, amount);
       return day;
     }));
 
     const dailyReduction = days > 1 ? consumable / (days - 1) : 0;
     $("[data-forecast-caption]", root).textContent = consumable
-      ? `${kg(dailyReduction)} lättare per dag från dag 1 till dag ${days}.`
+      ? `${formatWeight(dailyReduction)} lättare per dag från dag 1 till dag ${days}.`
       : `Markera mat, vatten eller bränsle som “Förbrukas” för att se hur vikten minskar.`;
 
     const grouped = categories.map((category) => ({
@@ -180,7 +253,7 @@ function createPlanner(container, { session = null } = {}) {
       const button = document.createElement("button");
       button.className = "category-bar";
       button.classList.toggle("active", filter === category.id);
-      button.setAttribute("aria-label", `Visa ${category.name}, ${kg(category.weight)}`);
+      button.setAttribute("aria-label", `Visa ${category.name}, ${formatWeight(category.weight)}`);
       const name = document.createElement("span");
       name.textContent = `${category.icon || ""} ${category.name}`.trim();
       const track = document.createElement("i");
@@ -189,7 +262,7 @@ function createPlanner(container, { session = null } = {}) {
       fill.style.background = category.color || "var(--green)";
       track.append(fill);
       const weight = document.createElement("strong");
-      weight.textContent = kg(category.weight);
+      weight.textContent = formatWeight(category.weight);
       button.append(name, track, weight);
       button.addEventListener("click", () => {
         filter = filter === category.id ? "alla" : category.id;
@@ -246,9 +319,9 @@ function createPlanner(container, { session = null } = {}) {
 
   function renderPrint(total, base, missingCount) {
     $("[data-print-title]", root).textContent = $("[data-list-name]", root).value || "Min packlista";
-    $("[data-print-total]", root).textContent = kg(total);
-    $("[data-print-base]", root).textContent = kg(base);
-    $("[data-print-target]", root).textContent = kg(targetWeightKg * 1000);
+    $("[data-print-total]", root).textContent = formatWeight(total);
+    $("[data-print-base]", root).textContent = formatWeight(base);
+    $("[data-print-target]", root).textContent = formatWeight(targetWeightKg * 1000);
     $("[data-print-count]", root).textContent = String(items.length);
     $("[data-print-missing]", root).textContent = String(missingCount);
     $("[data-print-empty]", root).hidden = items.length > 0;
@@ -471,7 +544,7 @@ function createPlanner(container, { session = null } = {}) {
     tripDays = Math.max(1, Number(listSettings.tripDays) || 6);
     targetWeightKg = Math.max(0, Number(listSettings.targetWeightKg) || 10);
     root.querySelectorAll("[data-trip-days]").forEach((input) => input.value = String(tripDays));
-    $("[data-target-weight]", root).value = String(targetWeightKg);
+    applyTargetWeightUnit();
     $("[data-list-name]", root).value = list.name;
     filter = "alla";
     query = "";
@@ -495,9 +568,11 @@ function createPlanner(container, { session = null } = {}) {
   }
 
   async function load() {
+    applyDensity();
     if (!persistent) {
       categories = mergedCategories();
       saveState.textContent = "Testläge · sparas inte";
+      applyTargetWeightUnit();
       renderFilters();
       render();
       return;
@@ -568,7 +643,8 @@ function createPlanner(container, { session = null } = {}) {
     });
   });
   $("[data-target-weight]", root).addEventListener("input", (event) => {
-    targetWeightKg = Math.min(100, Math.max(0, Number(event.target.value) || 0));
+    const enteredKg = displayUnitToKg(Number(event.target.value) || 0);
+    targetWeightKg = Math.min(100, Math.max(0, enteredKg));
     scheduleSave();
     render();
   });
@@ -755,6 +831,66 @@ $("#register-passkey").addEventListener("click", async () => {
 
 $("#sign-out").addEventListener("click", () => supabase.auth.signOut());
 
+// ---- header dropdowns (settings gear, account avatar) -- one generic
+// implementation for both, driven entirely by the [data-dropdown]/
+// [data-dropdown-panel] markup in index.html rather than per-button
+// wiring, since the two behave identically (click trigger to toggle,
+// click outside or Escape to close, opening one closes any other).
+function initDropdowns() {
+  const dropdowns = Array.from(document.querySelectorAll("[data-dropdown]"));
+  function closeAll() {
+    dropdowns.forEach((dropdown) => {
+      const trigger = dropdown.querySelector("button");
+      const panel = dropdown.querySelector("[data-dropdown-panel]");
+      panel.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+    });
+  }
+  dropdowns.forEach((dropdown) => {
+    const trigger = dropdown.querySelector("button");
+    const panel = dropdown.querySelector("[data-dropdown-panel]");
+    trigger.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const willOpen = panel.hidden;
+      closeAll();
+      panel.hidden = !willOpen;
+      trigger.setAttribute("aria-expanded", String(!willOpen));
+    });
+    panel.addEventListener("click", (event) => event.stopPropagation());
+  });
+  document.addEventListener("click", closeAll);
+  document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeAll(); });
+}
+initDropdowns();
+
+// ---- settings dropdown controls (unit system, density) -- guest and
+// signed-in headers each have their own copy of these selects (they're
+// never both visible at once, but both exist in the DOM simultaneously),
+// kept in sync with each other and with the shared `prefs` object so
+// switching between signed-out and signed-in never shows a stale choice.
+function initSettingsControls() {
+  const unitSelects = [$("#unit-select-guest"), $("#unit-select-app")].filter(Boolean);
+  const densitySelects = [$("#density-select-guest"), $("#density-select-app")].filter(Boolean);
+  function syncControls() {
+    unitSelects.forEach((select) => { select.value = prefs.unit; });
+    densitySelects.forEach((select) => { select.value = prefs.density; });
+  }
+  syncControls();
+  unitSelects.forEach((select) => select.addEventListener("change", () => {
+    prefs = { ...prefs, unit: select.value };
+    savePrefs();
+    syncControls();
+    refreshAllPlanners();
+  }));
+  densitySelects.forEach((select) => select.addEventListener("change", () => {
+    prefs = { ...prefs, density: select.value };
+    savePrefs();
+    syncControls();
+    refreshAllPlanners();
+  }));
+}
+initSettingsControls();
+
 createPlanner($("#guest-planner"));
 supabase.auth.onAuthStateChange((_event, session) => {
   $("#signed-out").hidden = Boolean(session);
@@ -762,6 +898,7 @@ supabase.auth.onAuthStateChange((_event, session) => {
   if (session) {
     closeModal();
     $("#account-email").textContent = session.user.email;
+    $("#account-toggle").textContent = session.user.email.trim().charAt(0).toUpperCase() || "?";
     createPlanner($("#private-planner"), { session });
     refreshPasskeyStatus();
   } else {

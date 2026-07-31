@@ -6,13 +6,36 @@
   <meta name="theme-color" content="#08140f">
   <meta name="description" content="Skapa en personlig packlista och håll koll på vikten inför nästa vandring.">
   <title>Packlista</title>
-  <link rel="stylesheet" href="styles.css?v=20">
+  <link rel="stylesheet" href="styles.css?v=21">
 </head>
 <body>
   <div id="signed-out">
     <header class="site-header">
       <a class="brand" href="./">▲ Packlista</a>
-      <button class="quiet-button" id="open-login">Logga in</button>
+      <div class="header-actions">
+        <div class="dropdown" data-dropdown>
+          <button class="icon-button" id="settings-toggle-guest" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Inställningar" title="Inställningar">⚙</button>
+          <div class="dropdown-panel settings-panel" data-dropdown-panel hidden>
+            <p class="dropdown-heading">Inställningar</p>
+            <label class="dropdown-field">
+              <span>Vikt</span>
+              <select id="unit-select-guest" aria-label="Enhetssystem för vikt">
+                <option value="metric">Metriskt (kg)</option>
+                <option value="us">US (lb)</option>
+              </select>
+            </label>
+            <label class="dropdown-field">
+              <span>Radtäthet</span>
+              <select id="density-select-guest" aria-label="Radtäthet i listan">
+                <option value="comfortable">Bekväm</option>
+                <option value="compact">Kompakt</option>
+              </select>
+            </label>
+            <p class="dropdown-hint">Packlista mäter inte volym, bara vikt — så bara vikt går att växla enhet på.</p>
+          </div>
+        </div>
+        <button class="quiet-button" id="open-login">Logga in</button>
+      </div>
     </header>
 
     <main>
@@ -50,11 +73,37 @@
   <div id="signed-in" hidden>
     <header class="app-header">
       <a class="brand" href="./">▲ Packlista</a>
-      <div>
-        <span id="account-email"></span>
-        <span class="passkey-status" id="passkey-status"></span>
-        <button class="quiet-button" id="register-passkey">Registrera YubiKey</button>
-        <button class="quiet-button" id="sign-out">Logga ut</button>
+      <div class="header-actions">
+        <div class="dropdown" data-dropdown>
+          <button class="icon-button" id="settings-toggle-app" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Inställningar" title="Inställningar">⚙</button>
+          <div class="dropdown-panel settings-panel" data-dropdown-panel hidden>
+            <p class="dropdown-heading">Inställningar</p>
+            <label class="dropdown-field">
+              <span>Vikt</span>
+              <select id="unit-select-app" aria-label="Enhetssystem för vikt">
+                <option value="metric">Metriskt (kg)</option>
+                <option value="us">US (lb)</option>
+              </select>
+            </label>
+            <label class="dropdown-field">
+              <span>Radtäthet</span>
+              <select id="density-select-app" aria-label="Radtäthet i listan">
+                <option value="comfortable">Bekväm</option>
+                <option value="compact">Kompakt</option>
+              </select>
+            </label>
+            <p class="dropdown-hint">Packlista mäter inte volym, bara vikt — så bara vikt går att växla enhet på.</p>
+          </div>
+        </div>
+        <div class="dropdown" data-dropdown>
+          <button class="avatar-button" id="account-toggle" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Konto"></button>
+          <div class="dropdown-panel account-panel" data-dropdown-panel hidden>
+            <p class="dropdown-heading" id="account-email"></p>
+            <p class="passkey-status" id="passkey-status"></p>
+            <button class="quiet-button" id="register-passkey">Registrera YubiKey</button>
+            <button class="quiet-button" id="sign-out">Logga ut</button>
+          </div>
+        </div>
       </div>
     </header>
     <main class="private-main">
@@ -135,8 +184,8 @@
           <article class="target-card" data-target-card>
             <label for="target-weight">Målvikt</label>
             <div>
-              <input id="target-weight" data-target-weight type="number" min="0" max="100" step="0.1" value="10" aria-label="Målvikt i kilogram">
-              <b>kg</b>
+              <input id="target-weight" data-target-weight type="number" min="0" max="100" step="0.1" value="10" aria-label="Målvikt">
+              <b data-target-unit>kg</b>
             </div>
             <small data-target-status>10,00 kg under mål</small>
           </article>
@@ -243,6 +292,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=17"></script>
+  <script type="module" src="app.js?v=18"></script>
 </body>
 </html>
