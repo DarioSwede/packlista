@@ -121,7 +121,11 @@ function createPlanner(container, { session = null } = {}) {
   let activeView = "packing";
 
   function itemTotal(item) {
-    return item.weight * item.quantity;
+    // "Bärs på kroppen" (worn): exactly one set is on your body, not in the
+    // pack, regardless of how many you're carrying in total -- e.g. 3 pairs
+    // of socks packed but one pair worn subtracts 1 from quantity, not all 3.
+    const packedQuantity = Math.max(0, item.quantity - (item.worn ? 1 : 0));
+    return item.weight * packedQuantity;
   }
 
   function render() {
@@ -384,12 +388,62 @@ function createPlanner(container, { session = null } = {}) {
     return input;
   }
 
+  // Small icon toggle used by the hover action row in the name cell (see
+  // itemRow below) -- always in the DOM/tab order so keyboard users can
+  // Tab to it, just visually hidden until the row is hovered or one of
+  // its own buttons has focus (see .item-actions in styles.css).
+  function actionToggle(icon, label, checked, onToggle, { disabled = false, title } = {}) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "item-action";
+    btn.textContent = icon;
+    btn.setAttribute("aria-label", label);
+    btn.setAttribute("aria-pressed", String(checked));
+    btn.classList.toggle("active", checked);
+    btn.disabled = disabled;
+    btn.title = title || label;
+    btn.addEventListener("click", () => {
+      onToggle();
+      scheduleSave();
+      render();
+    });
+    return btn;
+  }
+
   function itemRow(item) {
     const row = document.createElement("tr");
     const nameCell = row.insertCell();
     const nameWrap = document.createElement("div");
     nameWrap.className = "item-name-field";
     nameWrap.append(field("text", item.name, "Artikel", (value) => item.name = value));
+
+    // Hover/focus-reveal row for the three per-item flags that used to be
+    // (or, for favorite, could only ever have been) dedicated table
+    // columns. Consumable's category restriction and worn's "one set off
+    // the pack weight" behavior are unchanged from before, just moved from
+    // a checkbox column to here -- see itemTotal() for the worn math.
+    const consumableAllowed = CONSUMABLE_CATEGORIES.has(item.category);
+    const actions = document.createElement("div");
+    actions.className = "item-actions";
+    actions.append(
+      actionToggle("🍴", "Förbrukas", item.consumable, () => { item.consumable = !item.consumable; }, {
+        disabled: !consumableAllowed,
+        title: !consumableAllowed
+          ? "Förbrukning kan endast användas för Mat, Vatten och Bränsle."
+          : item.consumable
+            ? "Förbrukas -- vikten minskar jämnt över turens valda antal dagar. Klicka för att avmarkera."
+            : "Markera som förbrukas (mat, vatten, bränsle).",
+      }),
+      actionToggle("👕", "Bärs på kroppen", item.worn, () => { item.worn = !item.worn; }, {
+        title: item.worn
+          ? "Bärs på kroppen -- ett set räknas inte i packvikten. Klicka för att avmarkera."
+          : "Markera om ett set av den här prylen bärs på kroppen istället för i packningen.",
+      }),
+      actionToggle("★", "Favorit", item.favorite, () => { item.favorite = !item.favorite; }, {
+        title: item.favorite ? "Favorit -- klicka för att avmarkera." : "Markera som favorit.",
+      }),
+    );
+
     const remove = document.createElement("button");
     remove.className = "delete-button";
     remove.type = "button";
@@ -402,7 +456,7 @@ function createPlanner(container, { session = null } = {}) {
       scheduleSave();
       render();
     });
-    nameWrap.append(remove);
+    nameWrap.append(actions, remove);
     nameCell.append(nameWrap);
 
     const categoryCell = row.insertCell();
@@ -438,12 +492,6 @@ function createPlanner(container, { session = null } = {}) {
     weightCell.append(weightField);
     row.insertCell().append(field("number", item.quantity, "Antal", (value) => item.quantity = value));
     row.insertCell().append(field("checkbox", item.owned, "Jag har prylen", (value) => item.owned = value));
-    const consumable = field("checkbox", item.consumable, "Förbrukas", (value) => item.consumable = value);
-    consumable.disabled = !CONSUMABLE_CATEGORIES.has(item.category);
-    consumable.title = consumable.disabled
-      ? "Förbrukning kan endast användas för Mat, Vatten och Bränsle."
-      : "Vikten räknas som förbrukning och minskar jämnt över turens valda antal dagar.";
-    row.insertCell().append(consumable);
 
     return row;
   }
@@ -455,7 +503,7 @@ function createPlanner(container, { session = null } = {}) {
     $("[data-search]", root).value = "";
     items.push({
       id: uid(), name: "", category: "ovrigt", weight: 0, quantity: 1,
-      owned: false, consumable: false, worn: false, weighed: false, note: "",
+      owned: false, consumable: false, worn: false, favorite: false, weighed: false, note: "",
     });
     scheduleSave();
     render();
@@ -480,7 +528,8 @@ function createPlanner(container, { session = null } = {}) {
       quantity: Math.round(item.quantity),
       owned: item.owned,
       consumable: item.consumable,
-      worn: false,
+      worn: item.worn,
+      favorite: item.favorite,
       weighed: item.weighed,
       note: item.note,
       sort_order: index,
@@ -567,13 +616,12 @@ function createPlanner(container, { session = null } = {}) {
     deletedIds.clear();
 
     const stored = await supabase.from("packing_items")
-      .select("client_id,name,category,weight,quantity,owned,consumable,worn,weighed,note")
+      .select("client_id,name,category,weight,quantity,owned,consumable,worn,favorite,weighed,note")
       .eq("packing_list_id", listId).order("sort_order");
     if (stored.error) throw stored.error;
     items = stored.data.map((item) => ({
       ...item,
       id: item.client_id,
-      worn: false,
       consumable: item.consumable && CONSUMABLE_CATEGORIES.has(item.category),
     }));
     saveState.textContent = "Sparad ✓";

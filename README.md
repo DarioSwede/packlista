@@ -72,3 +72,35 @@ module-script) laddar.
 `.print-sheet` (A4-utskriften) är medvetet inte kopplad till temat — den
 renderas alltid vitt papper/svart text oavsett `prefs.theme`, precis som
 förut, eftersom det är vad som faktiskt hamnar på papperet.
+
+## Hover-ikoner per pryl (2026-07-31)
+
+`Förbrukas`-kryssrutan (tidigare en egen tabellkolumn) är borttagen.
+Den, `Bärs på kroppen` och den nya `Favorit`-flaggan styrs nu istället av
+tre små ikonknappar (🍴/👕/★) som ligger i namncellen på varje rad, dolda
+tills raden hovras eller en av knapparna har tangentbordsfokus (se
+`.item-actions`/`.item-action` i `styles.css` och `actionToggle()`/
+`itemRow()` i `app.js`). Knapparna är riktiga `<button>`-element hela
+tiden — bara `opacity`/`pointer-events` växlar — så Tab-ordningen och
+skärmläsare påverkas inte av att de är visuellt gömda.
+
+- **Förbrukas** (🍴): oförändrad logik, bara flyttad. Fortfarande
+  begränsad till Mat/Vatten/Bränsle (`CONSUMABLE_CATEGORIES`), fortfarande
+  det som driver viktprognosen.
+- **Bärs på kroppen** (👕): detta fanns tidigare som en egen tabellkolumn
+  och togs bort i commit `461d61e` ("Remove worn item option"). Samma
+  gamla räknelogik är tillbaka i `itemTotal()`: exakt **ett** set av
+  prylen räknas bort från packvikten, oavsett `quantity` — tre par
+  strumpor i packlistan men ett par på kroppen ⇒ bara två par räknas i
+  vikten. `worn`-kolumnen fanns kvar i databasen hela tiden (bara
+  hårdkodad till `false` i appen), så ingen ny migration behövdes för den.
+- **Favorit** (★): helt ny flagga, ren visuell markering utan koppling
+  till viktberäkning eller filtrering. Ny databaskolumn,
+  `supabase/migrations/0023_add_favorite_flag.sql` — måste köras i
+  Supabas SQL-editor för `packing_items.favorite` innan fältet går att
+  spara (annars skriver `rowForSave()` ett värde till en kolumn som inte
+  finns).
+
+Kamera-/länk-ikonerna i referensbilden (bild på prylen, köplänk) är
+medvetet inte med i detta — separat funktion, tas senare om det blir
+aktuellt.

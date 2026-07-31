@@ -142,11 +142,28 @@ table{width:100%;min-width:900px;border-collapse:collapse}
 th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}
 th{color:var(--muted);font-size:11px;font-weight:600;text-transform:uppercase}
 th abbr{text-decoration:none;cursor:help}
-.table-wrap th:first-child,.table-wrap td:first-child{position:sticky;left:0;z-index:2;min-width:190px;background:var(--card);box-shadow:1px 0 0 var(--line)}
+.table-wrap th:first-child,.table-wrap td:first-child{position:sticky;left:0;z-index:2;min-width:236px;background:var(--card);box-shadow:1px 0 0 var(--line)}
 .table-wrap th:first-child{z-index:3}
-td:nth-child(n+5):nth-child(-n+6){text-align:center}td input[type=checkbox]{width:auto}
+td:nth-child(5){text-align:center}td input[type=checkbox]{width:auto}
 td input[type=checkbox]:disabled{cursor:not-allowed;opacity:.25}
-.item-name-field{display:grid;grid-template-columns:minmax(105px,1fr) 31px;align-items:center;gap:6px}
+.item-name-field{display:grid;grid-template-columns:minmax(90px,1fr) auto 31px;align-items:center;gap:6px}
+/* ---- per-item hover actions (2026-07-31) -- Förbrukas/Bärs på
+   kroppen/Favorit used to be table columns (Förbrukas still was, until
+   this change; worn was removed entirely in an earlier commit, favorite
+   never existed). Now a row of small toggle buttons that live inside the
+   name cell but stay invisible until the row is hovered, matching the
+   reference mockup Tor sent. They're real focusable <button>s the whole
+   time (see actionToggle() in app.js) so Tab still reaches them and
+   :focus-within reveals them for keyboard users -- opacity/pointer-events
+   are the only things toggling, nothing is removed from the tab order. ---- */
+.item-actions{display:flex;gap:3px;opacity:0;pointer-events:none;transition:opacity .12s ease}
+tr:hover .item-actions,.item-actions:focus-within{opacity:1;pointer-events:auto}
+.item-action{display:grid;place-items:center;width:22px;height:22px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--muted);font-size:12px;padding:0;line-height:1}
+.item-action:hover{border-color:var(--green);color:var(--green)}
+.item-action.active{border-color:var(--green);background:var(--accent-soft);color:var(--green)}
+.item-action:disabled{opacity:.3;cursor:not-allowed}
+.item-action:disabled:hover{border-color:var(--line);color:var(--muted)}
+.item-action:focus-visible{outline:2px solid var(--green);outline-offset:1px}
 .weight-field{display:grid;grid-template-columns:minmax(86px,1fr) auto;align-items:center;gap:7px}
 .weighed-check{display:flex;align-items:center;gap:4px;color:var(--muted);font-size:11px;white-space:nowrap;cursor:pointer}
 .weighed-check:has(input:checked){color:var(--green)}
