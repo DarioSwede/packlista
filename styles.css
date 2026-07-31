@@ -192,7 +192,7 @@ th abbr{text-decoration:none;cursor:help}
 .table-wrap th:first-child{z-index:3}
 td:nth-child(5){text-align:center}td input[type=checkbox]{width:auto}
 td input[type=checkbox]:disabled{cursor:not-allowed;opacity:.25}
-.item-name-field{display:grid;grid-template-columns:minmax(90px,1fr) auto 31px;align-items:center;gap:6px}
+.item-name-field{display:grid;grid-template-columns:minmax(90px,1fr) auto 22px;align-items:center;gap:6px}
 /* ---- per-item hover actions (2026-07-31) -- Förbrukas/Bärs på
    kroppen/Favorit used to be table columns (Förbrukas still was, until
    this change; worn was removed entirely in an earlier commit, favorite
@@ -220,8 +220,14 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
 .weight-field{display:grid;grid-template-columns:minmax(86px,1fr) auto;align-items:center;gap:7px}
 .weighed-check{display:flex;align-items:center;gap:4px;color:var(--muted);font-size:11px;white-space:nowrap;cursor:pointer}
 .weighed-check:has(input:checked){color:var(--green)}
-.delete-button{display:grid;place-items:center;width:31px;height:31px;border:1px solid var(--danger-line);border-radius:7px;background:var(--danger-bg);color:var(--danger-text);font-size:20px;line-height:1}
-.delete-button:hover{border-color:var(--danger-line-hover);background:var(--danger-bg-hover)}
+/* Same footprint as .item-action (22x22, transparent, thin border) so the
+   delete "x" reads as part of the same row of small icon buttons instead
+   of a bigger, visually separate control -- only the red danger color
+   keeps it distinguishable. Always visible (no hover-reveal opacity like
+   .item-action) since removing an item is a deliberate, findable action,
+   not a per-row flag you toggle in passing. */
+.delete-button{display:grid;place-items:center;width:22px;height:22px;border:1px solid var(--danger-line);border-radius:6px;background:transparent;color:var(--danger-text);font-size:15px;font-weight:700;padding:0;line-height:1}
+.delete-button:hover{border-color:var(--danger-line-hover);background:var(--danger-bg)}
 .close-button{border:0;background:transparent;color:var(--danger-line-hover);font-size:23px}
 .empty-list{padding:80px 20px;text-align:center}.empty-list>span{color:var(--green);font-size:36px}.empty-list h3{margin:14px 0 6px}.empty-list p{color:var(--muted)}
 .empty-list.compact{padding:60px 20px}
@@ -304,7 +310,25 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
   td:nth-child(5){grid-area:owned}
   .table-wrap th:first-child,.table-wrap td:first-child{position:static;min-width:0;background:transparent;box-shadow:none;padding-bottom:8px;margin-bottom:6px;border-bottom:1px solid var(--line)}
   td[data-label]::before{content:attr(data-label);display:block;margin-bottom:3px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.05em}
-  td:nth-child(5){text-align:left}
+  /* Antal/Vikt/Kategori no longer need to fill their whole grid column --
+     Antal is capped at 99 (2 digits), Vikt at 9999 (4 digits, see the
+     .max attributes set in itemRow()), and Kategori only ever needs to
+     fit its longest option ("Elektronik"). Shrinking them to fixed/content
+     widths instead of the default width:100% leaves a bit of empty space
+     in each cell, which is fine -- there was room to spare (Tor's feedback:
+     "gott om utrymme att korta ned fältens bredd"). */
+  td[data-label="Antal"] input{width:60px}
+  td[data-label="Kategori"] select{width:auto;max-width:140px}
+  /* Vägd (inside the weight cell) and Har (its own cell) sit in different
+     grid columns on this card layout, so lining their checkboxes up on the
+     same horizontal line isn't possible -- the columns don't start at the
+     same x. Stacking the weight input above Vägd instead of beside it
+     means both Vägd and Har end up flush-left at their own cell's start,
+     which reads as a matched, aligned pair even though the columns
+     themselves sit side by side. */
+  .weight-field{grid-template-columns:1fr;justify-items:start;row-gap:6px}
+  td[data-label="Vikt (gram) / Vägd"] input{width:70px}
+  td:nth-child(5){display:flex;align-items:center;text-align:left}
 }
 /* Hover-revealed item-action buttons (Förbrukas/Bärs på kroppen/Favorit,
    see .item-action) rely on tr:hover, which touch input never triggers --

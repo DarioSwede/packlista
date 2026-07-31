@@ -432,7 +432,17 @@ function createPlanner(container, { session = null } = {}) {
     if (type === "checkbox") input.checked = value;
     else input.value = value;
     input.addEventListener("change", () => {
-      change(type === "checkbox" ? input.checked : type === "number" ? Math.max(0, Number(input.value) || 0) : input.value);
+      let out = input.value;
+      if (type === "checkbox") {
+        out = input.checked;
+      } else if (type === "number") {
+        out = Math.max(0, Number(input.value) || 0);
+        // Respects a max attribute when the call site sets one (e.g. Antal
+        // capped at 99, Vikt capped at 9999) so a pasted/typed value can't
+        // silently exceed the width the field was sized for -- see itemRow().
+        if (input.max !== "") out = Math.min(out, Number(input.max));
+      }
+      change(out);
       scheduleSave();
       render();
     });
@@ -507,6 +517,7 @@ function createPlanner(container, { session = null } = {}) {
     remove.title = "Ta bort prylen";
     remove.setAttribute("aria-label", `Ta bort ${item.name || "pryl"}`);
     remove.addEventListener("click", () => {
+      if (!window.confirm(`Ta bort "${item.name || "prylen"}"?`)) return;
       deletedIds.add(item.id);
       items = items.filter((candidate) => candidate.id !== item.id);
       scheduleSave();
@@ -538,7 +549,13 @@ function createPlanner(container, { session = null } = {}) {
     weightCell.dataset.label = "Vikt (gram) / Vägd";
     const weightField = document.createElement("div");
     weightField.className = "weight-field";
-    weightField.append(field("number", item.weight, "Vikt i gram", (value) => item.weight = value));
+    const weightInput = field("number", item.weight, "Vikt i gram", (value) => item.weight = value);
+    // 9999 g (~10 kg) is comfortably past anything one packing item weighs
+    // on its own -- capping it lets the mobile card give this field a
+    // fixed, narrow width instead of the full-width default (see .weight-field
+    // in styles.css's 700px breakpoint).
+    weightInput.max = "9999";
+    weightField.append(weightInput);
     const weighedLabel = document.createElement("label");
     weighedLabel.className = "weighed-check";
     weighedLabel.title = "Markera när vikten har kontrollerats på en våg.";
@@ -550,10 +567,25 @@ function createPlanner(container, { session = null } = {}) {
     weightCell.append(weightField);
     const quantityCell = row.insertCell();
     quantityCell.dataset.label = "Antal";
-    quantityCell.append(field("number", item.quantity, "Antal", (value) => item.quantity = value));
+    const quantityInput = field("number", item.quantity, "Antal", (value) => item.quantity = value);
+    // 99 st is far past any realistic packing-item count -- caps the field
+    // so the mobile card can size it narrow and fixed (see td[data-label="Antal"]
+    // in styles.css's 700px breakpoint).
+    quantityInput.max = "99";
+    quantityCell.append(quantityInput);
     const ownedCell = row.insertCell();
     ownedCell.dataset.label = "Har";
-    ownedCell.append(field("checkbox", item.owned, "Jag har prylen", (value) => item.owned = value));
+    // Wrapped the same way as Vägd (checkbox + visible text in a
+    // .weighed-check label) so the two read as a matched pair on mobile,
+    // instead of Har being a bare, unlabeled checkbox next to Vägd's
+    // checkbox+word.
+    const ownedLabel = document.createElement("label");
+    ownedLabel.className = "weighed-check";
+    ownedLabel.append(
+      field("checkbox", item.owned, "Jag har prylen", (value) => item.owned = value),
+      document.createTextNode("Har"),
+    );
+    ownedCell.append(ownedLabel);
 
     return row;
   }

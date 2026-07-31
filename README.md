@@ -168,3 +168,36 @@ aktuellt.
 
 **Måste köras i Supabase SQL-editorn innan detta funkar fullt ut:**
 `supabase/migrations/0024_account_settings.sql`.
+
+## Mobilkort, finjustering (2026-07-31)
+
+Uppföljning på kortlayouten ovan, efter feedback på hur den såg ut i
+praktiken:
+
+- **Antal/Vikt har fått `max`-attribut** (99 respektive 9999) i
+  `itemRow()` i `app.js` -- rimliga tak för en enskild packningspryl.
+  `field()`s change-hanterare respekterar nu `input.max` när det är satt
+  och klipper värdet, så ett inklistrat/inskrivet för högt tal inte
+  tyst överskrider fältets bredd. Kategori-selecten fick ingen
+  motsvarande hård gräns (den styrs av `categories`-listan, inte av
+  användarinmatning) men är CSS-smalnad till innehållets bredd
+  (`width:auto;max-width:140px`, dimensionerad för det längsta
+  alternativet, "Elektronik").
+- **Vägd och Har låg i olika grid-kolumner** i kortlayouten (Vägd inne i
+  Vikt-cellen, Har i sin egen cell) -- att linjera dem exakt sida vid
+  sida är geometriskt omöjligt när kolumnerna själva ligger bredvid
+  varandra. Löst genom att stapla Vikt-fältet ovanför Vägd istället för
+  bredvid (`.weight-field{grid-template-columns:1fr}` i 700px-brytpunkten),
+  så båda kryssrutorna hamnar vänsterjusterade i respektive cell --
+  läses som ett matchat par även om de tekniskt sitter i skilda
+  kolumner. Har fick också en synlig textetikett ("Har") i samma
+  `.weighed-check`-stil som Vägd; tidigare var den en osynlig kryssruta
+  utan text bredvid sig (bara `aria-label`).
+- **Radera-knappen (×)** är omstylad till samma fotavtryck som
+  Förbrukas/Bärs på kroppen/Favorit-knapparna (22x22px, transparent
+  bakgrund, tunn kantlinje) istället för sin tidigare större, distinkta
+  röda ruta -- läses nu som en del av samma knapprad, bara i
+  varningsfärg. `.item-name-field`s tredje kolumn (`31px` -> `22px`) är
+  justerad i samklang. Ett `window.confirm(...)` med prylens namn körs
+  nu innan raderingen faktiskt sker, samma mönster som "Ta bort konto"
+  i kontoinställningarna.
