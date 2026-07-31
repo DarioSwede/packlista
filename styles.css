@@ -302,28 +302,28 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
      screenshot caught exactly that (name + F/B/star/x + Har overlapping).
      flex-wrap can't do that -- an item that doesn't fit wraps to a new
      line instead, so overlap is impossible by construction.
-     Two explicit rows, per Tor: row 1 is Kategori + Vikt (Vägd rides
-     along inside the Vikt cell, see .weight-field), row 2 is Pryl (name,
-     with its F/B/star/x actions riding along the same way) + Antal + Har.
+     Two explicit rows, per Tor: row 1 is Kategori + Antal + Vikt (Vägd
+     rides along inside the Vikt cell, see .weight-field), row 2 is Pryl
+     (name, with its F/B/star/x actions riding along the same way) + Har.
      Flexbox has no native "hard break here" between two same-level
      items, so a zero-size ::after pseudo-element with flex-basis:100%
-     sits between the two groups (order:3, between weight's 2 and name's
-     4) -- a standard trick: a 100%-wide flex item can't share a line
+     sits between the two groups (order:4, between vikt's 3 and name's
+     5) -- a standard trick: a 100%-wide flex item can't share a line
      with anything, which forces everything ordered after it onto a new
      line, without needing an extra real DOM element. */
   tbody tr{
-    display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:10px;row-gap:8px;
-    margin-bottom:10px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:var(--card);
+    display:flex;flex-wrap:wrap;align-items:flex-start;column-gap:8px;row-gap:8px;
+    margin-bottom:10px;border:1px solid var(--line);border-radius:12px;padding:10px 10px;background:var(--card);
   }
-  tbody tr::after{content:"";order:3;flex-basis:100%}
+  tbody tr::after{content:"";order:4;flex-basis:100%}
   td{border-bottom:0;padding:0;min-width:0}
-  td:nth-child(1){flex:1 1 90px;order:4} /* namn */
+  td:nth-child(1){flex:1 1 90px;order:5} /* namn */
   td:nth-child(2){flex:1 1 70px;order:1} /* kategori */
-  td:nth-child(3){flex:0 0 auto;order:2} /* vikt + vägd */
-  td:nth-child(4){flex:0 0 auto;order:5} /* antal */
+  td:nth-child(3){flex:0 0 auto;order:3} /* vikt + vägd */
+  td:nth-child(4){flex:0 0 auto;order:2} /* antal */
   td:nth-child(5){flex:0 0 auto;order:6} /* har */
   /* Name used to be first/top with a border-bottom separating it from the
-     fields below; now it's on row 2 (order:4, see tbody tr above), so
+     fields below; now it's on row 2 (order:5, see tbody tr above), so
      the same divider moves to border-top instead, still separating name
      from the field group above it. */
   .table-wrap th:first-child,.table-wrap td:first-child{position:static;min-width:0;background:transparent;box-shadow:none;padding-top:8px;border-top:1px solid var(--line)}
@@ -331,16 +331,24 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
   /* Antal/Vikt/Kategori no longer need to fill their whole width --
      Antal is capped at 99 (2 digits), Vikt at 9999 (4 digits, see the
      .max attributes set in itemRow()), and Kategori only ever needs to
-     fit its longest option ("Elektronik"). If a row's items don't all
-     fit on one line on a given phone, flex-wrap just drops the last
-     one(s) to an extra line -- no overflow, no overlap. */
-  td[data-label="Antal"] input{width:56px}
-  td[data-label="Vikt"] input{width:66px}
-  td[data-label="Kategori"] select{width:auto;max-width:130px}
+     fit its longest option ("Elektronik"). Trimmed a little tighter than
+     the earlier round (56->52, 66->64, 130->120, gaps 10/6->8/5) so all
+     three actually share one line on a typical phone now that Antal
+     joined Kategori+Vikt there, instead of always wrapping to a second
+     line -- verified live (incl. that "9999" still displays in full,
+     not clipped) against a real Chrome-rendered number-spinner input,
+     which is the worst case: iOS Safari, what Tor's on, doesn't render
+     spinner arrows at all, so there's more real breathing room there
+     than tested here. If a row's items still don't fit on some phone,
+     flex-wrap just drops the last one(s) to an extra line -- no
+     overflow, no overlap either way. */
+  td[data-label="Antal"] input{width:52px}
+  td[data-label="Vikt"] input{width:64px}
+  td[data-label="Kategori"] select{width:auto;max-width:120px}
   /* Inline (input, then Vägd's checkbox+label right after it) -- overrides
      the desktop .weight-field's wider minmax(86px,1fr) column with two
      auto-sized ones that hug the (already-narrowed) input and text. */
-  .weight-field{grid-template-columns:auto auto;column-gap:6px}
+  .weight-field{grid-template-columns:auto auto;column-gap:5px}
   td:nth-child(5){display:flex;align-items:center;text-align:left}
 }
 /* Hover-revealed item-action buttons (Förbrukas/Bärs på kroppen/Favorit,

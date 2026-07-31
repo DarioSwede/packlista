@@ -299,3 +299,15 @@ Två mindre städningar i samma veva:
 
 Verifierat live mot produktionssajten (test-iframe, 375px och 320px)
 innan commit.
+
+**Femte rundan samma dag:** Antal flyttat upp till rad 1, mellan
+Kategori och Vikt (rad 1 = Kategori/Antal/Vikt+Vägd, rad 2 = Pryl/Har)
+-- bara ett `order`-byte (kategori=1, antal=2, vikt=3, brytare=4,
+namn=5, har=6). Fick krympa lite till för att alla tre skulle rymmas på
+en rad vid 375px istället för att alltid radbrytas: Antal-inputen
+56->52px, Vikt-inputen 66->64px, Kategori-selectens `max-width`
+130->120px, `column-gap` 10->8px, `.weight-field`s egen gap 6->5px.
+Verifierat live att "9999" fortfarande visas i sin helhet (inte
+avklippt) i den smalare Vikt-inputen -- testat mot Chrome-renderad
+sifferstegrare (worst case), som Tors faktiska iOS Safari inte ens
+visar, så marginalen är i praktiken större på riktiga enheten.
