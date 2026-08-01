@@ -19,7 +19,7 @@
       if (storedPrefs.theme === "light") document.documentElement.classList.add("theme-light");
     } catch (e) { /* ignore malformed/blocked storage */ }
   </script>
-  <link rel="stylesheet" href="styles.css?v=51">
+  <link rel="stylesheet" href="styles.css?v=52">
 </head>
 <body>
   <div id="signed-out">
@@ -184,9 +184,13 @@
       <section class="admin-settings" id="admin-settings" hidden>
         <div class="auth-divider"><span>administration</span></div>
         <div class="admin-settings-heading">
-          <div><h3>Registrerade användare</h3><p>Online betyder aktiv i Packlista de senaste två minuterna.</p></div>
+          <div><h3>Packlista-användare</h3><p>Bjud in användare och se registrerade konton.</p></div>
           <button class="quiet-button" type="button" id="admin-refresh-users">Uppdatera</button>
         </div>
+        <form class="admin-invite-form" id="admin-invite-form">
+          <label>E-postadress<input id="admin-invite-email" type="email" autocomplete="email" placeholder="namn@example.com" required></label>
+          <button class="primary-button" type="submit">Skicka inbjudan</button>
+        </form>
         <div class="admin-users-list" id="admin-users-list"></div>
         <p class="form-message" id="admin-message" aria-live="polite"></p>
       </section>
@@ -215,6 +219,7 @@
           <div class="list-switcher" data-list-switcher hidden>
             <select data-list-select aria-label="Välj packlista"></select>
             <button data-new-list aria-label="Skapa ny packlista">＋ Ny</button>
+            <button data-share-list aria-label="Dela vald packlista">Dela</button>
             <button class="list-delete-button" data-delete-list aria-label="Ta bort vald packlista">Ta bort</button>
           </div>
           <p class="list-login-hint" data-list-login-hint>Logga in för att skapa och växla mellan flera listor.</p>
@@ -248,6 +253,7 @@
             </div>
             <div class="category-chart" data-category-chart></div>
             <div class="empty-insight" data-category-empty>Vikter per kategori visas när du lagt till prylar.</div>
+            <button class="quiet-button manage-categories" data-manage-categories type="button">Hantera kategorier</button>
           </section>
         </aside>
         <p class="save-state" data-save-state></p>
@@ -370,11 +376,40 @@
           </form>
         </section>
       </div>
+      <div class="planner-modal-backdrop" data-category-modal hidden>
+        <section class="new-list-card compact-modal" role="dialog" aria-modal="true" aria-labelledby="category-modal-title">
+          <button class="close-button" data-category-close aria-label="Stäng">×</button>
+          <p class="eyebrow">Aktuell packlista</p>
+          <h2 id="category-modal-title">Hantera kategorier</h2>
+          <form data-category-form class="compact-form">
+            <label>Symbol<input data-category-icon maxlength="4" value="🏕️" required></label>
+            <label>Namn<input data-category-name maxlength="30" placeholder="Exempel: Fiske" required></label>
+            <label>Färg<input data-category-color type="color" value="#2f934d"></label>
+            <button class="primary-button" type="submit">Lägg till kategori</button>
+          </form>
+          <div class="category-manager-list" data-category-manager-list></div>
+          <p class="form-message" data-category-message aria-live="polite"></p>
+        </section>
+      </div>
+      <div class="planner-modal-backdrop" data-share-modal hidden>
+        <section class="new-list-card compact-modal" role="dialog" aria-modal="true" aria-labelledby="share-modal-title">
+          <button class="close-button" data-share-close aria-label="Stäng">×</button>
+          <p class="eyebrow">Intern delning</p>
+          <h2 id="share-modal-title">Dela packlistan</h2>
+          <form data-share-form class="compact-form">
+            <label>Användare<select data-share-user required></select></label>
+            <label>Behörighet<select data-share-access><option value="viewer">Kan visa</option><option value="editor">Kan redigera</option></select></label>
+            <button class="primary-button" type="submit">Dela listan</button>
+          </form>
+          <div class="share-members-list" data-share-members></div>
+          <p class="form-message" data-share-message aria-live="polite"></p>
+        </section>
+      </div>
     </section>
   </template>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=37"></script>
+  <script type="module" src="app.js?v=38"></script>
 </body>
 </html>

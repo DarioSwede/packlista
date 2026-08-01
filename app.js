@@ -114,6 +114,8 @@ function createPlanner(container, { session = null } = {}) {
   let targetWeightKg = 10;
   let listSettings = {};
   let availableLists = [];
+  let canEditList = true;
+  let ownsList = true;
   let saveTimer = null;
   let deletedIds = new Set();
   const persistent = Boolean(session);
@@ -646,6 +648,7 @@ function createPlanner(container, { session = null } = {}) {
     );
     ownedCell.append(ownedLabel);
 
+    if (!canEditList) row.querySelectorAll("input,select,button").forEach((control) => { control.disabled = true; });
     return row;
   }
 
@@ -695,6 +698,10 @@ function createPlanner(container, { session = null } = {}) {
       saveState.textContent = "Testläge · sparas inte";
       return;
     }
+    if (!canEditList) {
+      saveState.textContent = "Delad med visningsbehörighet";
+      return;
+    }
     saveState.textContent = "Sparar…";
     clearTimeout(saveTimer);
     saveTimer = setTimeout(save, 600);
@@ -706,7 +713,7 @@ function createPlanner(container, { session = null } = {}) {
     const listName = $("[data-list-name]", root).value.trim() || "Min packlista";
     const listResult = await supabase.from("packing_lists")
       .update({ name: listName, categories, settings: listSettings, updated_at: new Date().toISOString() })
-      .eq("id", listId).eq("user_id", session.user.id);
+      .eq("id", listId);
     let error = listResult.error;
     if (!error && rows.length) {
       const result = await supabase.from("packing_items")
@@ -716,7 +723,7 @@ function createPlanner(container, { session = null } = {}) {
     const removed = [...deletedIds];
     if (!error && removed.length) {
       const result = await supabase.from("packing_items").delete()
-        .eq("packing_list_id", listId).eq("user_id", session.user.id)
+        .eq("packing_list_id", listId)
         .in("client_id", removed);
       error = result.error;
     }
@@ -737,7 +744,7 @@ function createPlanner(container, { session = null } = {}) {
   }
 
   function mergedCategories(stored = []) {
-    return DEFAULT_CATEGORIES.map((fallback) => {
+    const defaults = DEFAULT_CATEGORIES.map((fallback) => {
       const match = stored.find((category) => category.id === fallback.id);
       return {
         ...fallback,
@@ -746,6 +753,14 @@ function createPlanner(container, { session = null } = {}) {
         color: match?.color || fallback.color,
       };
     });
+    const defaultIds = new Set(DEFAULT_CATEGORIES.map((category) => category.id));
+    const custom = stored.filter((category) => !defaultIds.has(category.id)).map((category) => ({
+      id: String(category.id),
+      name: String(category.name || "Egen kategori"),
+      icon: String(category.icon || "📦"),
+      color: String(category.color || "#2f934d"),
+    }));
+    return [...defaults, ...custom];
   }
 
   function renderListSwitcher() {
@@ -753,12 +768,13 @@ function createPlanner(container, { session = null } = {}) {
     select.replaceChildren(...availableLists.map((list) => {
       const option = document.createElement("option");
       option.value = list.id;
-      option.textContent = list.name;
+      option.textContent = `${list.user_id === session?.user.id ? "" : "Delad · "}${list.name}`;
       option.selected = list.id === listId;
       return option;
     }));
     const deleteButton = $("[data-delete-list]", root);
-    deleteButton.disabled = availableLists.length <= 1;
+    deleteButton.hidden = !ownsList;
+    deleteButton.disabled = ownsList && availableLists.filter((list) => list.user_id === session?.user.id).length <= 1;
     deleteButton.title = deleteButton.disabled
       ? "Skapa en ny lista innan du tar bort den sista."
       : "Ta bort vald packlista";
@@ -766,6 +782,14 @@ function createPlanner(container, { session = null } = {}) {
 
   async function openList(list) {
     listId = list.id;
+    ownsList = !persistent || list.user_id === session.user.id;
+    canEditList = ownsList;
+    if (persistent && !ownsList) {
+      const membership = await supabase.from("packing_list_members")
+        .select("access_level").eq("packing_list_id", listId).eq("user_id", session.user.id).maybeSingle();
+      if (membership.error) throw membership.error;
+      canEditList = membership.data?.access_level === "editor";
+    }
     categories = mergedCategories(list.categories);
     listSettings = list.settings || {};
     tripDays = Math.max(1, Number(listSettings.tripDays) || 6);
@@ -773,6 +797,11 @@ function createPlanner(container, { session = null } = {}) {
     root.querySelectorAll("[data-trip-days]").forEach((input) => input.value = String(tripDays));
     applyTargetWeightUnit();
     $("[data-list-name]", root).value = list.name;
+    $("[data-list-name]", root).disabled = !canEditList;
+    $("[data-add]", root).disabled = !canEditList;
+    $("[data-empty-add]", root).disabled = !canEditList;
+    $("[data-share-list]", root).hidden = !ownsList;
+    $("[data-manage-categories]", root).disabled = !canEditList;
     filter = "alla";
     query = "";
     $("[data-search]", root).value = "";
@@ -817,13 +846,13 @@ function createPlanner(container, { session = null } = {}) {
     }
 
     const result = await supabase.from("packing_lists")
-      .select("id,name,categories,settings,created_at").eq("user_id", userId).order("created_at");
+      .select("id,user_id,name,categories,settings,created_at").order("created_at");
     if (result.error) throw result.error;
     availableLists = result.data;
     if (!availableLists.length) {
       const created = await supabase.from("packing_lists")
         .insert({ user_id: userId, name: "Min packlista", categories: DEFAULT_CATEGORIES, settings: { tripDays: 6, targetWeightKg: 10 } })
-        .select("id,name,categories,settings,created_at").single();
+        .select("id,user_id,name,categories,settings,created_at").single();
       if (created.error) throw created.error;
       availableLists = [created.data];
     }
@@ -841,6 +870,140 @@ function createPlanner(container, { session = null } = {}) {
       filterSelect.append(option);
     });
   }
+
+  const categoryModal = $("[data-category-modal]", root);
+  const categoryMessage = $("[data-category-message]", root);
+  const defaultCategoryIds = new Set(DEFAULT_CATEGORIES.map((category) => category.id));
+
+  function renderCategoryManager() {
+    const list = $("[data-category-manager-list]", root);
+    list.replaceChildren(...categories.map((category) => {
+      const row = document.createElement("article");
+      const name = document.createElement("span");
+      name.textContent = `${category.icon || "📦"} ${category.name}`;
+      row.append(name);
+      if (!defaultCategoryIds.has(category.id)) {
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "quiet-button danger-button";
+        remove.textContent = "Ta bort";
+        remove.addEventListener("click", () => {
+          if (items.some((item) => item.category === category.id)) {
+            categoryMessage.textContent = "Flytta först prylarna från kategorin.";
+            return;
+          }
+          categories = categories.filter((candidate) => candidate.id !== category.id);
+          renderCategoryManager();
+          renderFilters();
+          render();
+          scheduleSave();
+          categoryMessage.textContent = "Kategorin är borttagen ✓";
+        });
+        row.append(remove);
+      }
+      return row;
+    }));
+  }
+
+  $("[data-manage-categories]", root).addEventListener("click", () => {
+    if (!canEditList) return;
+    categoryMessage.textContent = "";
+    renderCategoryManager();
+    categoryModal.hidden = false;
+    $("[data-category-name]", root).focus();
+  });
+  const closeCategoryModal = () => { categoryModal.hidden = true; };
+  $("[data-category-close]", root).addEventListener("click", closeCategoryModal);
+  categoryModal.addEventListener("click", (event) => { if (event.target === categoryModal) closeCategoryModal(); });
+  $("[data-category-form]", root).addEventListener("submit", (event) => {
+    event.preventDefault();
+    const name = $("[data-category-name]", root).value.trim();
+    if (categories.some((category) => category.name.toLocaleLowerCase("sv-SE") === name.toLocaleLowerCase("sv-SE"))) {
+      categoryMessage.textContent = "Kategorinamnet finns redan.";
+      return;
+    }
+    categories.push({
+      id: `egen-${uid()}`,
+      name,
+      icon: $("[data-category-icon]", root).value.trim() || "📦",
+      color: $("[data-category-color]", root).value,
+    });
+    $("[data-category-name]", root).value = "";
+    renderCategoryManager();
+    renderFilters();
+    render();
+    scheduleSave();
+    categoryMessage.textContent = "Kategorin är tillagd ✓";
+  });
+
+  const shareModal = $("[data-share-modal]", root);
+  const shareMessage = $("[data-share-message]", root);
+
+  async function loadSharing() {
+    const [directory, members] = await Promise.all([
+      supabase.rpc("list_packlista_directory"),
+      supabase.rpc("list_packlista_members", { requested_list_id: listId }),
+    ]);
+    if (directory.error || members.error) throw directory.error || members.error;
+    const memberIds = new Set((members.data || []).map((member) => member.user_id));
+    const select = $("[data-share-user]", root);
+    select.replaceChildren(...(directory.data || []).filter((user) => !memberIds.has(user.id)).map((user) => {
+      const option = document.createElement("option");
+      option.value = user.id;
+      option.textContent = `${avatarSymbol(user.avatar_key)} ${user.display_name}`;
+      return option;
+    }));
+    select.disabled = !select.options.length;
+    const list = $("[data-share-members]", root);
+    list.replaceChildren(...(members.data || []).map((member) => {
+      const row = document.createElement("article");
+      const identity = document.createElement("span");
+      identity.textContent = `${avatarSymbol(member.avatar_key)} ${member.display_name}`;
+      const access = document.createElement("small");
+      access.textContent = member.access_level === "editor" ? "Kan redigera" : "Kan visa";
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.className = "quiet-button danger-button";
+      remove.textContent = "Ta bort";
+      remove.addEventListener("click", async () => {
+        const result = await supabase.rpc("unshare_packlista", {
+          requested_list_id: listId,
+          target_user_id: member.user_id,
+        });
+        shareMessage.textContent = result.error ? `Kunde inte ta bort: ${result.error.message}` : "Delningen är borttagen ✓";
+        if (!result.error) await loadSharing();
+      });
+      row.append(identity, access, remove);
+      return row;
+    }));
+  }
+
+  $("[data-share-list]", root).addEventListener("click", async () => {
+    if (!ownsList) return;
+    shareMessage.textContent = "Hämtar användare…";
+    shareModal.hidden = false;
+    try {
+      await loadSharing();
+      shareMessage.textContent = "";
+    } catch (error) {
+      shareMessage.textContent = `Kunde inte hämta delning: ${error.message}`;
+    }
+  });
+  const closeShareModal = () => { shareModal.hidden = true; };
+  $("[data-share-close]", root).addEventListener("click", closeShareModal);
+  shareModal.addEventListener("click", (event) => { if (event.target === shareModal) closeShareModal(); });
+  $("[data-share-form]", root).addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const userSelect = $("[data-share-user]", root);
+    if (!userSelect.value) return;
+    const result = await supabase.rpc("share_packlista", {
+      requested_list_id: listId,
+      target_user_id: userSelect.value,
+      requested_access: $("[data-share-access]", root).value,
+    });
+    shareMessage.textContent = result.error ? `Kunde inte dela: ${result.error.message}` : "Packlistan är delad ✓";
+    if (!result.error) await loadSharing();
+  });
 
   $("[data-add]", root).addEventListener("click", addItem);
   $("[data-empty-add]", root).addEventListener("click", addItem);
@@ -972,7 +1135,7 @@ function createPlanner(container, { session = null } = {}) {
         categories: DEFAULT_CATEGORIES,
         settings: { tripDays: chosenDays, targetWeightKg: 10 },
       })
-      .select("id,name,categories,settings,created_at").single();
+      .select("id,user_id,name,categories,settings,created_at").single();
     submitButton.disabled = false;
     if (created.error) {
       newListMessage.textContent = created.error.code === "23505"
@@ -1163,8 +1326,38 @@ function formatOnlineTime(value) {
     : "";
 }
 
+function isAdminRole(role) {
+  return role === "admin" || role === "owner";
+}
+
+async function loadPresence() {
+  if (!currentSession) return;
+  const header = $("#online-users");
+  const { data, error } = await supabase.rpc("list_packlista_presence");
+  if (error) {
+    console.error("Packlista: kunde inte hämta närvaro", error);
+    header.hidden = true;
+    return;
+  }
+  const online = (data || [])
+    .sort((left, right) => Number(right.id === currentSession.user.id) - Number(left.id === currentSession.user.id));
+  header.replaceChildren();
+  if (!online.length) {
+    header.hidden = true;
+    return;
+  }
+  const dot = document.createElement("i");
+  dot.className = "online-dot";
+  const names = document.createElement("strong");
+  names.textContent = online
+    .map((user) => `${adminFirstName(user)} ${formatOnlineTime(user.last_seen_at)}`.trim())
+    .join(" · ");
+  header.append(dot, names);
+  header.hidden = false;
+}
+
 async function loadAdminUsers() {
-  if (currentProfile?.role !== "admin") return;
+  if (!isAdminRole(currentProfile?.role)) return;
   const message = $("#admin-message");
   const list = $("#admin-users-list");
   message.textContent = "Hämtar användare…";
@@ -1192,32 +1385,35 @@ async function loadAdminUsers() {
     row.append(avatar, identity, status);
     list.append(row);
   }
-  const online = (data || [])
-    .filter((user) => user.is_online)
-    .sort((left, right) => Number(right.id === currentSession?.user.id) - Number(left.id === currentSession?.user.id));
-  const header = $("#online-users");
-  header.replaceChildren();
-  if (online.length) {
-    const dot = document.createElement("i");
-    dot.className = "online-dot";
-    const text = document.createElement("span");
-    const names = document.createElement("strong");
-    names.textContent = online
-      .map((user) => `${adminFirstName(user)} ${formatOnlineTime(user.last_seen_at)}`.trim())
-      .join(" · ");
-    text.append(names);
-    header.append(dot, text);
-    header.hidden = false;
-  } else {
-    header.hidden = true;
-  }
   message.textContent = "";
 }
 
 async function markActive() {
   if (!currentSession || document.visibilityState === "hidden") return;
   await supabase.rpc("touch_packlista_presence");
+  await loadPresence();
 }
+
+$("#admin-invite-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!isAdminRole(currentProfile?.role)) return;
+  const emailInput = $("#admin-invite-email");
+  const message = $("#admin-message");
+  const button = event.currentTarget.querySelector('[type="submit"]');
+  button.disabled = true;
+  message.textContent = "Skickar inbjudan…";
+  const { error } = await supabase.functions.invoke("invite-packlista-user", {
+    body: { email: emailInput.value.trim() },
+  });
+  button.disabled = false;
+  if (error) {
+    message.textContent = `Kunde inte skicka inbjudan: ${error.message}`;
+    return;
+  }
+  emailInput.value = "";
+  message.textContent = "Inbjudan är skickad ✓";
+  await loadAdminUsers();
+});
 
 $("#admin-refresh-users").addEventListener("click", loadAdminUsers);
 $("#open-admin-settings").addEventListener("click", async () => {
@@ -1238,8 +1434,8 @@ const openAccountSettingsModal = async () => {
   if (!error && data) {
     currentProfile = data;
     setAccountAvatar(data.avatar_key);
-    $("#admin-settings").hidden = data.role !== "admin";
-    if (data.role === "admin") await loadAdminUsers();
+    $("#admin-settings").hidden = !isAdminRole(data.role);
+    if (isAdminRole(data.role)) await loadAdminUsers();
   }
 };
 const closeAccountSettingsModal = () => { accountSettingsModal.hidden = true; };
@@ -1275,7 +1471,7 @@ $("#rename-form").addEventListener("submit", async (event) => {
   accountMessage.textContent = error ? `Kunde inte byta namn: ${error.message}` : "Namnet är uppdaterat ✓";
   if (!error) {
     currentProfile = { ...currentProfile, display_name: name };
-    if (currentProfile.role === "admin") loadAdminUsers();
+    if (isAdminRole(currentProfile.role)) loadAdminUsers();
   }
 });
 
@@ -1402,13 +1598,13 @@ async function handleSession(session) {
       .select("display_name,avatar_key,role").eq("id", session.user.id).maybeSingle();
     currentProfile = data || { display_name: "", avatar_key: "backpack", role: "user" };
     setAccountAvatar(currentProfile.avatar_key);
-    $("#admin-settings").hidden = currentProfile.role !== "admin";
-    $("#open-admin-settings").hidden = currentProfile.role !== "admin";
+    $("#admin-settings").hidden = !isAdminRole(currentProfile.role);
+    $("#open-admin-settings").hidden = !isAdminRole(currentProfile.role);
     clearInterval(presenceTimer);
     clearInterval(adminRefreshTimer);
     await markActive();
     presenceTimer = setInterval(markActive, 45_000);
-    if (currentProfile.role === "admin") {
+    if (isAdminRole(currentProfile.role)) {
       await loadAdminUsers();
       adminRefreshTimer = setInterval(loadAdminUsers, 60_000);
     }
