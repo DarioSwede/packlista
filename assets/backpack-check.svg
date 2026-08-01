@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">Packlista</title>
+  <g fill="none" stroke="#2f8f45" stroke-linecap="round" stroke-linejoin="round" stroke-width="4">
+    <path d="M19 24v-5c0-8 5-13 13-13s13 5 13 13v5"/>
+    <path d="M18 20h28c4 0 7 3 7 7v23c0 5-4 8-8 8H19c-4 0-8-3-8-8V27c0-4 3-7 7-7Z"/>
+    <path d="M11 31H8c-2 0-4 2-4 4v12c0 3 2 5 5 5h2M53 31h3c2 0 4 2 4 4v12c0 3-2 5-5 5h-2"/>
+    <path d="m20 28 9 9 18-20" stroke-width="5"/>
+  </g>
+</svg>

@@ -6,6 +6,7 @@
   <meta name="theme-color" content="#08140f">
   <meta name="description" content="Skapa en personlig packlista och håll koll på vikten inför nästa vandring.">
   <title>Packlista</title>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <script>
     // Applies the saved theme before first paint, straight from localStorage,
     // so a light-mode user doesn't see a flash of the dark default while
@@ -18,12 +19,12 @@
       if (storedPrefs.theme === "light") document.documentElement.classList.add("theme-light");
     } catch (e) { /* ignore malformed/blocked storage */ }
   </script>
-  <link rel="stylesheet" href="styles.css?v=46">
+  <link rel="stylesheet" href="styles.css?v=47">
 </head>
 <body>
   <div id="signed-out">
     <header class="site-header">
-      <a class="brand" href="./">▲ Packlista</a>
+      <a class="brand" href="./"><img src="assets/packlista-mark.svg" alt="">Packlista</a>
       <div class="header-actions">
         <div class="dropdown" data-dropdown>
           <button class="icon-button" id="settings-toggle-guest" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Inställningar" title="Inställningar">⚙</button>
@@ -97,7 +98,7 @@
 
   <div id="signed-in" hidden>
     <header class="app-header">
-      <a class="brand" href="./">▲ Packlista</a>
+      <a class="brand" href="./"><img src="assets/packlista-mark.svg" alt="">Packlista</a>
       <div class="header-actions">
         <div class="dropdown" data-dropdown>
           <button class="icon-button" id="settings-toggle-app" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Inställningar" title="Inställningar">⚙</button>
@@ -203,7 +204,7 @@
           <p class="list-login-hint" data-list-login-hint>Logga in för att skapa och växla mellan flera listor.</p>
         </div>
         <nav class="planner-nav" aria-label="Packlistans vyer">
-          <button class="active" data-view-button="packing">Packlista</button>
+          <button class="active" data-view-button="packing"><img class="nav-icon" src="assets/backpack-check.svg" alt="">Packlista</button>
           <button data-view-button="shopping">Inköp <span data-shopping-badge>0</span></button>
           <button data-view-button="print">A4-utskrift</button>
         </nav>

@@ -25,7 +25,8 @@ button{cursor:pointer}
 .site-header,.app-header{width:min(1180px,calc(100% - 40px));height:76px;margin:auto;display:flex;align-items:center;justify-content:space-between}
 .header-actions{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
 .passkey-status{max-width:230px;color:var(--green);font-size:11px}
-.brand{color:var(--text);font-size:16px;font-weight:800;letter-spacing:.05em;text-decoration:none}
+.brand{display:inline-flex;align-items:center;gap:10px;color:var(--text);font-size:16px;font-weight:800;letter-spacing:.05em;text-decoration:none}
+.brand img{width:28px;height:28px;flex:0 0 auto}
 .quiet-button,.secondary-button{border:1px solid var(--line);border-radius:9px;background:transparent;color:inherit;padding:9px 14px}
 .quiet-button:hover,.secondary-button:hover{border-color:var(--green);color:var(--green)}
 .danger-button{border-color:var(--danger-line);color:var(--danger-text)}
@@ -95,6 +96,8 @@ button{cursor:pointer}
 .planner-nav button{display:flex;align-items:center;justify-content:space-between;width:100%;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--text);padding:10px 12px;text-align:left}
 .planner-nav button:hover,.planner-nav button.active{border-color:var(--line);background:var(--hover)}
 .planner-nav span{min-width:23px;border-radius:99px;background:var(--line);padding:2px 7px;color:var(--green);font-size:11px;text-align:center}
+.planner-nav button[data-view-button="packing"]{justify-content:flex-start;gap:9px}
+.planner-nav .nav-icon{width:22px;height:22px;flex:0 0 auto;color:var(--green)}
 .save-state{color:var(--muted);font-size:12px}
 /* Duplicate of the sidebar save-state, placed above .top-stats so it's
    visible without scrolling to the sidebar (easy to miss there, especially
