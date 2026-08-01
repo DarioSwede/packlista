@@ -39,7 +39,7 @@ button{cursor:pointer}
    headers -- generic [data-dropdown]/[data-dropdown-panel] wiring lives
    in app.js's initDropdowns(), one implementation for both. ---- */
 .dropdown{position:relative}
-.icon-button{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--muted);font-size:16px;padding:0}
+.icon-button{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--muted);font-size:24px;line-height:1;padding:0}
 .icon-button:hover,.icon-button[aria-expanded="true"]{border-color:var(--green);color:var(--green)}
 .avatar-button{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:99px;background:var(--accent-soft);color:var(--green);font-weight:800;font-size:20px;padding:0}
 .avatar-button:hover,.avatar-button[aria-expanded="true"]{border-color:var(--green)}
@@ -262,8 +262,8 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
 .print-sheet{width:min(794px,100%);min-height:1123px;margin:auto;background:#fff;color:#182019;padding:56px 60px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
 .print-sheet header{margin-bottom:24px}.print-sheet header>p{margin:0 0 8px;color:#52705e;font-size:10px;font-weight:800;letter-spacing:.18em}
 .print-sheet h1{margin:0;font-family:Georgia,serif;font-size:32px}.print-summary{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:14px;font-size:12px}
-.print-table{min-width:0;color:#182019}.print-table th,.print-table td{border-color:#cfd5d0;padding:8px 6px;font-size:11px}.print-table th{color:#526158}
-.print-table th:first-child,.print-table td:first-child{width:24px}.print-empty{padding:50px;text-align:center;color:#66736b}
+.print-table{min-width:0;color:#182019;table-layout:auto}.print-table th,.print-table td{border-color:#cfd5d0;padding:8px 6px;font-size:11px;white-space:nowrap}.print-table th{color:#526158}
+.print-table th:first-child,.print-table td:first-child{width:24px}.print-table th:last-child,.print-table td:last-child{width:32%;white-space:normal;overflow-wrap:anywhere}.print-empty{padding:50px;text-align:center;color:#66736b}
 /* ---- density setting (dropdown, see .dropdown-field above) -- toggled
    via app.js adding/removing this class on .planner itself, so it scopes
    to one planner instance's own row spacing without touching anything

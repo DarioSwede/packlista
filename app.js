@@ -1145,6 +1145,17 @@ function formatAdminDate(value) {
   return value ? new Date(value).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" }) : "Aldrig";
 }
 
+function adminFirstName(user) {
+  const identity = (user.display_name || user.email?.split("@")[0] || "Användare").trim();
+  return identity.split(/\s+/)[0].split(/[._-]/)[0] || "Användare";
+}
+
+function formatOnlineTime(value) {
+  return value
+    ? new Date(value).toLocaleTimeString("sv-SE", { hour: "2-digit", minute: "2-digit" })
+    : "";
+}
+
 async function loadAdminUsers() {
   if (currentProfile?.role !== "admin") return;
   const message = $("#admin-message");
@@ -1174,16 +1185,19 @@ async function loadAdminUsers() {
     row.append(avatar, identity, status);
     list.append(row);
   }
-  const online = (data || []).filter((user) => user.is_online);
+  const online = (data || [])
+    .filter((user) => user.is_online)
+    .sort((left, right) => Number(right.id === currentSession?.user.id) - Number(left.id === currentSession?.user.id));
   const header = $("#online-users");
   header.replaceChildren();
   if (online.length) {
     const dot = document.createElement("i");
     dot.className = "online-dot";
     const text = document.createElement("span");
-    text.append(document.createTextNode("Online: "));
     const names = document.createElement("strong");
-    names.textContent = online.map((user) => `${avatarSymbol(user.avatar_key)} ${user.display_name || user.email}`).join(" · ");
+    names.textContent = online
+      .map((user) => `${adminFirstName(user)} ${formatOnlineTime(user.last_seen_at)}`.trim())
+      .join(" · ");
     text.append(names);
     header.append(dot, text);
     header.hidden = false;
