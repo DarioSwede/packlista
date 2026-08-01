@@ -25,8 +25,11 @@ button{cursor:pointer}
 .site-header,.app-header{width:min(1180px,calc(100% - 40px));height:76px;margin:auto;display:flex;align-items:center;justify-content:space-between}
 .header-actions{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:13px}
 .passkey-status{max-width:230px;color:var(--green);font-size:11px}
-.brand{display:inline-flex;align-items:center;gap:10px;color:var(--text);font-size:16px;font-weight:800;letter-spacing:.05em;text-decoration:none}
-.brand img{width:28px;height:28px;flex:0 0 auto}
+.brand{display:inline-flex;align-items:center;gap:12px;color:var(--text);font-size:24px;font-weight:800;letter-spacing:.05em;text-decoration:none}
+.brand img{width:42px;height:42px;flex:0 0 auto}
+.app-header{position:relative}
+.online-users{position:absolute;left:50%;display:flex;align-items:center;justify-content:center;gap:7px;max-width:42%;transform:translateX(-50%);color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.online-users strong{color:var(--text);font-weight:700}.online-users .online-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px color-mix(in srgb,var(--green) 15%,transparent)}
 .quiet-button,.secondary-button{border:1px solid var(--line);border-radius:9px;background:transparent;color:inherit;padding:9px 14px}
 .quiet-button:hover,.secondary-button:hover{border-color:var(--green);color:var(--green)}
 .danger-button{border-color:var(--danger-line);color:var(--danger-text)}
@@ -38,7 +41,7 @@ button{cursor:pointer}
 .dropdown{position:relative}
 .icon-button{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--muted);font-size:16px;padding:0}
 .icon-button:hover,.icon-button[aria-expanded="true"]{border-color:var(--green);color:var(--green)}
-.avatar-button{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:99px;background:var(--accent-soft);color:var(--green);font-weight:800;font-size:14px;padding:0;text-transform:uppercase}
+.avatar-button{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:99px;background:var(--accent-soft);color:var(--green);font-weight:800;font-size:20px;padding:0}
 .avatar-button:hover,.avatar-button[aria-expanded="true"]{border-color:var(--green)}
 .dropdown-panel{position:absolute;top:calc(100% + 8px);right:0;z-index:25;width:250px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
 .dropdown-label{margin:0 0 2px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
@@ -88,9 +91,11 @@ button{cursor:pointer}
 .planner-sidebar{padding:28px 22px;border-right:1px solid var(--line);border-radius:20px 0 0 20px;background:var(--card)}
 .list-title{width:100%;border:0;border-bottom:1px solid transparent;background:transparent;color:var(--text);padding:3px 0;font-size:22px;font-weight:800}
 .list-title:hover,.list-title:focus{outline:0;border-color:var(--green)}
-.list-switcher{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;margin-top:12px}
+.list-switcher{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;margin-top:12px}
 .list-switcher select,.list-switcher button{min-width:0;border:1px solid var(--line);border-radius:7px;background:var(--well);color:var(--text);padding:7px;font-size:11px}
 .list-switcher button{color:var(--green);white-space:nowrap}
+.list-switcher .list-delete-button{color:var(--danger-text)}
+.list-switcher .list-delete-button:disabled{cursor:not-allowed;opacity:.4}
 .list-login-hint{margin:10px 0 0;color:var(--muted);font-size:11px;line-height:1.4}
 .planner-nav{display:grid;gap:6px;margin:26px 0}
 .planner-nav button{display:flex;align-items:center;justify-content:space-between;width:100%;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--text);padding:10px 12px;text-align:left}
@@ -204,6 +209,7 @@ td input[type=checkbox]:disabled{cursor:not-allowed;opacity:.25}
    see below) instead of grid's "auto"/"1fr" tracks silently keeping a
    content-sized floor that can overflow the row on a narrow phone. */
 .item-name-field{display:flex;align-items:center;gap:6px}
+.item-category-icon{display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;border-radius:7px;background:var(--accent-soft);font-size:15px}
 .item-name-field>input{flex:1 1 90px;min-width:0}
 .item-name-field .item-actions,.item-name-field .delete-button{flex:0 0 auto}
 /* ---- per-item hover actions (2026-07-31) -- Förbrukas/Bärs på
@@ -276,6 +282,11 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
 .login-card form{display:grid;gap:8px}.login-card label{color:var(--muted);font-size:12px}
 .login-card input{width:100%;margin-bottom:8px;border:1px solid var(--line);border-radius:8px;background:var(--well);color:var(--text);padding:11px}
 .login-card .primary-button,.login-card .secondary-button{width:100%;margin-top:6px}
+.account-settings-card{width:min(620px,100%);max-height:min(820px,calc(100vh - 40px));overflow:auto}
+.avatar-picker{margin:18px 0 0;border:1px solid var(--line);border-radius:12px;padding:14px}.avatar-picker legend{padding:0 6px;color:var(--muted);font-size:12px}
+#avatar-options{display:grid;grid-template-columns:repeat(8,1fr);gap:7px}.avatar-option{display:grid;place-items:center;min-width:0;height:46px;border:1px solid var(--line);border-radius:10px;background:var(--well);font-size:23px}.avatar-option:hover,.avatar-option[aria-checked="true"]{border-color:var(--green);background:var(--accent-soft)}
+.admin-settings{margin-top:20px}.admin-settings-heading{display:flex;align-items:start;justify-content:space-between;gap:14px}.admin-settings-heading h3{margin:0;font-size:17px}.admin-settings-heading p{margin:5px 0 0;color:var(--muted);font-size:11px}.admin-settings-heading .quiet-button{width:auto;margin:0}
+.admin-users-list{display:grid;gap:7px;margin-top:14px}.admin-user-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;border:1px solid var(--line);border-radius:10px;padding:10px}.admin-user-avatar{font-size:22px}.admin-user-row strong,.admin-user-row span{display:block}.admin-user-row span{margin-top:3px;color:var(--muted);font-size:11px}.online-badge{color:var(--green);font-size:11px;font-weight:800}.offline-badge{color:var(--muted);font-size:11px}
 .auth-divider{display:flex;align-items:center;gap:10px;margin:16px 0 10px;color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.12em}
 .auth-divider::before,.auth-divider::after{content:"";height:1px;flex:1;background:var(--line)}
 .close-button{position:absolute;right:14px;top:10px}.form-message{min-height:20px;margin-bottom:0;color:var(--warn);font-size:13px;line-height:1.4}
@@ -426,6 +437,7 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
      down in the new flow. */
   .planner-sidebar>p.save-state{display:none}
   .view-heading{align-items:flex-start}.print-sheet{min-height:0;padding:32px 24px}
+  .online-users{display:none}
 }
 @media(max-width:480px){
   .site-header,.app-header,.hero,.planner-section,.private-main{width:calc(100% - 24px)}
@@ -444,6 +456,7 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
   .dropdown-panel{width:min(280px,calc(100vw - 24px))}
   .planner-nav button{padding:9px 5px;font-size:12px}.view-heading{display:block}.view-heading .primary-button{width:100%;margin-top:14px}
   .shopping-item{align-items:flex-start}.print-sheet{padding:24px 14px}.print-summary{display:grid;grid-template-columns:1fr 1fr}
+  .brand{gap:8px;font-size:19px}.brand img{width:34px;height:34px}#avatar-options{grid-template-columns:repeat(4,1fr)}
 }
 @page{size:A4 portrait;margin:12mm}
 @media print{

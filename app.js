@@ -23,6 +23,13 @@ const DEFAULT_CATEGORIES = [
   { id: "bransle", name: "Bränsle", icon: "⛽", color: "#d85f67" },
 ];
 const CONSUMABLE_CATEGORIES = new Set(["mat", "vatten", "bransle"]);
+const AVATARS = [
+  ["backpack", "🎒", "Ryggsäck"], ["tent", "⛺", "Tält"],
+  ["boots", "🥾", "Vandringskängor"], ["compass", "🧭", "Kompass"],
+  ["mountain", "🏔️", "Fjäll"], ["canoe", "🛶", "Kanot"],
+  ["campfire", "🔥", "Lägereld"], ["forest", "🌲", "Skog"],
+];
+const avatarSymbol = (key) => AVATARS.find(([value]) => value === key)?.[1] || "🎒";
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const uid = () => crypto.randomUUID();
@@ -476,7 +483,11 @@ function createPlanner(container, { session = null } = {}) {
     const nameCell = row.insertCell();
     const nameWrap = document.createElement("div");
     nameWrap.className = "item-name-field";
-    nameWrap.append(field("text", item.name, "Artikel", (value) => item.name = value));
+    const categoryIcon = document.createElement("span");
+    categoryIcon.className = "item-category-icon";
+    categoryIcon.setAttribute("aria-hidden", "true");
+    categoryIcon.textContent = categories.find((category) => category.id === item.category)?.icon || "📦";
+    nameWrap.append(categoryIcon, field("text", item.name, "Artikel", (value) => item.name = value));
 
     // Hover/focus-reveal row for the three per-item flags that used to be
     // (or, for favorite, could only ever have been) dedicated table
@@ -736,6 +747,11 @@ function createPlanner(container, { session = null } = {}) {
       option.selected = list.id === listId;
       return option;
     }));
+    const deleteButton = $("[data-delete-list]", root);
+    deleteButton.disabled = availableLists.length <= 1;
+    deleteButton.title = deleteButton.disabled
+      ? "Skapa en ny lista innan du tar bort den sista."
+      : "Ta bort vald packlista";
   }
 
   async function openList(list) {
@@ -892,6 +908,26 @@ function createPlanner(container, { session = null } = {}) {
     newListName.select();
   });
 
+  $("[data-delete-list]", root).addEventListener("click", async () => {
+    if (!persistent || !listId) return;
+    const selected = availableLists.find((list) => list.id === listId);
+    if (availableLists.length <= 1) {
+      saveState.textContent = "Skapa en ny lista innan du tar bort den sista";
+      return;
+    }
+    if (!window.confirm(`Ta bort packlistan "${selected?.name || "Packlista"}" och alla dess prylar?`)) return;
+    clearTimeout(saveTimer);
+    const result = await supabase.from("packing_lists").delete()
+      .eq("id", listId).eq("user_id", session.user.id);
+    if (result.error) {
+      saveState.textContent = `Kunde inte ta bort listan: ${result.error.message}`;
+      return;
+    }
+    availableLists = availableLists.filter((list) => list.id !== listId);
+    await openList(availableLists[0]);
+    saveState.textContent = "Packlistan är borttagen";
+  });
+
   $("[data-new-list-cancel]", root).addEventListener("click", closeNewListModal);
   newListModal.addEventListener("click", (event) => {
     if (event.target === newListModal) closeNewListModal();
@@ -981,19 +1017,19 @@ $("#sign-up").addEventListener("click", async () => {
 
 function passkeyErrorMessage(error) {
   if (error?.code === "webauthn_credential_not_found") {
-    return "YubiKeyn är inte registrerad för kontot. Logga in med e-post och välj Registrera YubiKey.";
+    return "Ingen passkey hittades för kontot. Logga in med e-post och välj Registrera passkey.";
   }
   if (error?.code === "passkey_disabled") {
-    return "Inloggning med säkerhetsnyckel är inte aktiverad.";
+    return "Inloggning med passkey är inte aktiverad.";
   }
   if (error?.name === "NotAllowedError") {
-    return "Registreringen avbröts eller YubiKeyn svarade inte. Sätt i nyckeln och försök igen.";
+    return "Passkey-flödet avbröts eller enheten svarade inte. Försök igen med biometrik, PIN-kod eller säkerhetsnyckel.";
   }
   return error?.message || "Ett okänt fel inträffade.";
 }
 
 $("#passkey-sign-in").addEventListener("click", async () => {
-  authMessage.textContent = "Väntar på din säkerhetsnyckel…";
+  authMessage.textContent = "Väntar på din passkey…";
   window.focus();
   $("#passkey-sign-in").focus({ preventScroll: true });
   const { error } = await supabase.auth.signInWithPasskey();
@@ -1006,26 +1042,26 @@ async function refreshPasskeyStatus() {
   const { data, error } = await supabase.auth.passkey.list();
   if (error) {
     status.textContent = "";
-    button.textContent = "Registrera YubiKey";
+    button.textContent = "Registrera passkey";
     return;
   }
   const count = data?.length || 0;
-  status.textContent = count ? `Säkerhetsnyckel aktiv ✓` : "Ingen säkerhetsnyckel registrerad";
-  button.textContent = count ? "Lägg till säkerhetsnyckel" : "Registrera YubiKey";
+  status.textContent = count ? `Passkey aktiv ✓` : "Ingen passkey registrerad";
+  button.textContent = count ? "Lägg till passkey" : "Registrera passkey";
 }
 
 $("#register-passkey").addEventListener("click", async () => {
   const button = $("#register-passkey");
   const status = $("#passkey-status");
   button.disabled = true;
-  status.textContent = "Väntar på YubiKey…";
+  status.textContent = "Väntar på din passkey…";
   const { error } = await supabase.auth.registerPasskey();
   button.disabled = false;
   if (error) {
     status.textContent = `Kunde inte registrera: ${passkeyErrorMessage(error)}`;
     return;
   }
-  status.textContent = "YubiKey registrerad ✓";
+  status.textContent = "Passkey registrerad ✓";
   await refreshPasskeyStatus();
 });
 
@@ -1038,16 +1074,128 @@ $("#sign-out").addEventListener("click", () => supabase.auth.signOut());
 // here bails out harmlessly if it's somehow null (shouldn't happen, the
 // "Kontoinställningar" button only exists in the signed-in header).
 let currentSession = null;
+let currentProfile = null;
+let presenceTimer = null;
+let adminRefreshTimer = null;
 const accountSettingsModal = $("#account-settings-modal");
 const accountMessage = $("#account-settings-message");
+
+function setAccountAvatar(key) {
+  $("#account-toggle").textContent = avatarSymbol(key);
+  document.querySelectorAll(".avatar-option").forEach((button) => {
+    button.setAttribute("aria-checked", String(button.dataset.avatar === key));
+  });
+}
+
+function initAvatarOptions() {
+  const options = $("#avatar-options");
+  for (const [key, symbol, label] of AVATARS) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "avatar-option";
+    button.dataset.avatar = key;
+    button.setAttribute("role", "radio");
+    button.setAttribute("aria-label", label);
+    button.setAttribute("aria-checked", "false");
+    button.textContent = symbol;
+    button.addEventListener("click", async () => {
+      if (!currentSession) return;
+      accountMessage.textContent = "Sparar avatar…";
+      const { error } = await supabase.from("users")
+        .update({ avatar_key: key, updated_at: new Date().toISOString() })
+        .eq("id", currentSession.user.id);
+      if (error) {
+        accountMessage.textContent = `Kunde inte spara avatar: ${error.message}`;
+        return;
+      }
+      currentProfile = { ...currentProfile, avatar_key: key };
+      setAccountAvatar(key);
+      accountMessage.textContent = "Avataren är sparad ✓";
+    });
+    options.append(button);
+  }
+}
+initAvatarOptions();
+
+function formatAdminDate(value) {
+  return value ? new Date(value).toLocaleString("sv-SE", { dateStyle: "short", timeStyle: "short" }) : "Aldrig";
+}
+
+async function loadAdminUsers() {
+  if (currentProfile?.role !== "admin") return;
+  const message = $("#admin-message");
+  const list = $("#admin-users-list");
+  message.textContent = "Hämtar användare…";
+  const { data, error } = await supabase.rpc("admin_list_packlista_users");
+  if (error) {
+    message.textContent = `Kunde inte hämta användare: ${error.message}`;
+    return;
+  }
+  list.replaceChildren();
+  for (const user of data || []) {
+    const row = document.createElement("article");
+    row.className = "admin-user-row";
+    const avatar = document.createElement("div");
+    avatar.className = "admin-user-avatar";
+    avatar.textContent = avatarSymbol(user.avatar_key);
+    const identity = document.createElement("div");
+    const name = document.createElement("strong");
+    name.textContent = user.display_name || user.email || "Namnlös användare";
+    const meta = document.createElement("span");
+    meta.textContent = `${user.email || "Ingen e-post"} · Registrerad ${formatAdminDate(user.created_at)} · Senast inloggad ${formatAdminDate(user.last_sign_in_at)}`;
+    identity.append(name, meta);
+    const status = document.createElement("b");
+    status.className = user.is_online ? "online-badge" : "offline-badge";
+    status.textContent = user.is_online ? "Online" : "Offline";
+    row.append(avatar, identity, status);
+    list.append(row);
+  }
+  const online = (data || []).filter((user) => user.is_online);
+  const header = $("#online-users");
+  header.replaceChildren();
+  if (online.length) {
+    const dot = document.createElement("i");
+    dot.className = "online-dot";
+    const text = document.createElement("span");
+    text.append(document.createTextNode("Online: "));
+    const names = document.createElement("strong");
+    names.textContent = online.map((user) => `${avatarSymbol(user.avatar_key)} ${user.display_name || user.email}`).join(" · ");
+    text.append(names);
+    header.append(dot, text);
+    header.hidden = false;
+  } else {
+    header.hidden = true;
+  }
+  message.textContent = "";
+}
+
+async function markActive() {
+  if (!currentSession || document.visibilityState === "hidden") return;
+  await supabase.rpc("touch_packlista_presence");
+}
+
+$("#admin-refresh-users").addEventListener("click", loadAdminUsers);
+$("#open-admin-settings").addEventListener("click", async () => {
+  const panel = $("#open-admin-settings").closest("[data-dropdown-panel]");
+  if (panel) panel.hidden = true;
+  $("#settings-toggle-app").setAttribute("aria-expanded", "false");
+  await openAccountSettingsModal();
+  $("#admin-settings").scrollIntoView({ block: "start" });
+});
 const openAccountSettingsModal = async () => {
   accountMessage.textContent = "";
   $("#password-form").reset();
   accountSettingsModal.hidden = false;
   if (!currentSession) return;
   const { data, error } = await supabase.from("users")
-    .select("display_name").eq("id", currentSession.user.id).maybeSingle();
+    .select("display_name,avatar_key,role").eq("id", currentSession.user.id).maybeSingle();
   $("#display-name").value = error ? "" : (data?.display_name || "");
+  if (!error && data) {
+    currentProfile = data;
+    setAccountAvatar(data.avatar_key);
+    $("#admin-settings").hidden = data.role !== "admin";
+    if (data.role === "admin") await loadAdminUsers();
+  }
 };
 const closeAccountSettingsModal = () => { accountSettingsModal.hidden = true; };
 
@@ -1080,6 +1228,10 @@ $("#rename-form").addEventListener("submit", async (event) => {
   // UPDATE on display_name -- 0022 had revoked it entirely) or this fails
   // with a permission error every time.
   accountMessage.textContent = error ? `Kunde inte byta namn: ${error.message}` : "Namnet är uppdaterat ✓";
+  if (!error) {
+    currentProfile = { ...currentProfile, display_name: name };
+    if (currentProfile.role === "admin") loadAdminUsers();
+  }
 });
 
 $("#password-form").addEventListener("submit", async (event) => {
@@ -1192,18 +1344,41 @@ function initSettingsControls() {
 initSettingsControls();
 
 createPlanner($("#guest-planner"));
-supabase.auth.onAuthStateChange((_event, session) => {
+async function handleSession(session) {
   currentSession = session;
   $("#signed-out").hidden = Boolean(session);
   $("#signed-in").hidden = !session;
   if (session) {
     closeModal();
     $("#account-email").textContent = session.user.email;
-    $("#account-toggle").textContent = session.user.email.trim().charAt(0).toUpperCase() || "?";
     createPlanner($("#private-planner"), { session });
     refreshPasskeyStatus();
+    const { data } = await supabase.from("users")
+      .select("display_name,avatar_key,role").eq("id", session.user.id).maybeSingle();
+    currentProfile = data || { display_name: "", avatar_key: "backpack", role: "user" };
+    setAccountAvatar(currentProfile.avatar_key);
+    $("#admin-settings").hidden = currentProfile.role !== "admin";
+    $("#open-admin-settings").hidden = currentProfile.role !== "admin";
+    clearInterval(presenceTimer);
+    clearInterval(adminRefreshTimer);
+    await markActive();
+    presenceTimer = setInterval(markActive, 45_000);
+    if (currentProfile.role === "admin") {
+      await loadAdminUsers();
+      adminRefreshTimer = setInterval(loadAdminUsers, 60_000);
+    }
   } else {
     $("#private-planner").replaceChildren();
     $("#passkey-status").textContent = "";
+    $("#online-users").hidden = true;
+    $("#admin-settings").hidden = true;
+    $("#open-admin-settings").hidden = true;
+    currentProfile = null;
+    clearInterval(presenceTimer);
+    clearInterval(adminRefreshTimer);
   }
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") markActive(); });
+supabase.auth.onAuthStateChange((_event, session) => {
+  handleSession(session).catch((error) => console.error("Packlista session setup failed", error));
 });
