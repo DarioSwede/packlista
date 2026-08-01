@@ -128,10 +128,9 @@ button{cursor:pointer}
 .top-stats .top-stat-button{width:100%;text-align:left;font:inherit;color:inherit;cursor:pointer;transition:border-color .12s ease}
 .top-stats .top-stat-button:hover,.top-stats .top-stat-button:focus-visible{border-color:var(--green)}
 .top-stats .top-stat-button:focus-visible{outline:2px solid var(--green);outline-offset:2px}
-/* Vägda/Inköp status tint (set by render() in app.js). Both use the same
-   green-when-done/red-when-not framing -- Vägda: green once everything's
-   weighed, red while something isn't. Inköp: green while the shopping
-   list is empty, red as soon as there's something to buy. */
+/* Vikt saknas/Inköp status tint (set by render() in app.js). Both use the
+   same green-when-done/red-when-not framing. Missing weight is based on a
+   zero/empty weight, independently of the separate Kontrollvägd checkbox. */
 .top-stats article.stat-alert,.top-stats .top-stat-button.stat-alert{border-color:var(--danger-line);background-color:var(--danger-bg)}
 .top-stats article.stat-alert strong,.top-stats .top-stat-button.stat-alert strong{color:var(--danger-text)}
 .top-stats article.stat-good,.top-stats .top-stat-button.stat-good{border-color:var(--status-under-line);background-color:color-mix(in srgb, var(--green) 14%, var(--card))}

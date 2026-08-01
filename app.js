@@ -156,14 +156,15 @@ function createPlanner(container, { session = null } = {}) {
 
     $("[data-total]", root).textContent = formatWeight(total);
     $("[data-base]", root).textContent = formatWeight(total - consumable);
-    const weighedCount = items.filter((item) => item.weighed).length;
-    $("[data-weighed]", root).textContent = `${weighedCount}/${items.length}`;
-    // Vägda: green once everything's weighed (an empty list counts as
-    // "done" -- nothing left to weigh), red while anything isn't. Inköp
-    // below is the same green-when-done/red-when-not framing.
-    const weighedArticle = $("[data-weighed]", root).closest("article");
-    weighedArticle.classList.toggle("stat-good", weighedCount === items.length);
-    weighedArticle.classList.toggle("stat-alert", weighedCount < items.length);
+    // Missing weight is deliberately independent of the "Kontrollvägd"
+    // checkbox. A checked zero-gram row still lacks a usable weight, while
+    // an unchecked row with a positive weight does not. This also keeps the
+    // summary aligned with the print view's generated "Vikt saknas" note.
+    const missingWeightCount = items.filter((item) => Number(item.weight) <= 0).length;
+    $("[data-missing-weight]", root).textContent = String(missingWeightCount);
+    const missingWeightArticle = $("[data-missing-weight]", root).closest("article");
+    missingWeightArticle.classList.toggle("stat-good", missingWeightCount === 0);
+    missingWeightArticle.classList.toggle("stat-alert", missingWeightCount > 0);
     const missing = items.filter((item) => !item.owned);
     $("[data-missing]", root).textContent = String(missing.length);
     const shoppingButton = $("[data-missing]", root).closest(".top-stat-button");
@@ -404,6 +405,15 @@ function createPlanner(container, { session = null } = {}) {
     $("[data-print-empty]", root).hidden = items.length > 0;
     printBody.replaceChildren(...items.map((item) => {
       const row = document.createElement("tr");
+      // Older imported rows can carry the literal note even after a real
+      // weight has been entered. Treat that phrase as derived UI state:
+      // remove it when weight exists, add it when weight is zero, and keep
+      // any genuine user note alongside it.
+      const legacyMissingWeight = /^vikt saknas i lokal lista\.?$/i;
+      const storedNote = legacyMissingWeight.test((item.note || "").trim()) ? "" : (item.note || "").trim();
+      const printNote = Number(item.weight) <= 0
+        ? `Vikt saknas${storedNote ? ` · ${storedNote}` : ""}`
+        : storedNote;
       const values = [
         "☐",
         item.name,
@@ -411,7 +421,7 @@ function createPlanner(container, { session = null } = {}) {
         `${item.weight || 0} g`,
         String(item.quantity),
         item.weighed ? "✓" : "",
-        item.owned ? item.note : `INKÖP${item.note ? ` · ${item.note}` : ""}`,
+        item.owned ? printNote : `INKÖP${printNote ? ` · ${printNote}` : ""}`,
       ];
       values.forEach((value) => {
         const cell = row.insertCell();
