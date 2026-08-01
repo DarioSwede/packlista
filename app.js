@@ -992,20 +992,10 @@ function createPlanner(container, { session = null } = {}) {
   });
 }
 
-const modal = $("#login-modal");
-const authMessage = $("#auth-message");
-const openModal = () => { modal.hidden = false; $("#email").focus(); };
-const closeModal = () => { modal.hidden = true; authMessage.textContent = ""; };
-
-$("#open-login").addEventListener("click", openModal);
-$("#close-login").addEventListener("click", closeModal);
-modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(); });
-document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeModal(); });
-
 // Fun one-off, 2026-08-01 -- Tor wanted the pulsing red edge-glow that
-// AI computer-use tools flash while remote-controlling a screen, but
-// triggered by pressing "Logga in" instead. One overlay element, made
-// once and reused (not recreated per login attempt); see
+// AI computer-use tools flash while remote-controlling a screen. It now
+// starts when the login dialog opens, before the user submits the form.
+// One overlay element is made once and reused; see
 // .control-glow-overlay in styles.css for the actual glow/animation.
 const controlGlow = document.createElement("div");
 controlGlow.className = "control-glow-overlay";
@@ -1014,10 +1004,27 @@ document.body.append(controlGlow);
 const flashControlGlow = () => controlGlow.classList.add("active");
 const hideControlGlow = () => controlGlow.classList.remove("active");
 
+const modal = $("#login-modal");
+const authMessage = $("#auth-message");
+const openModal = () => {
+  flashControlGlow();
+  modal.hidden = false;
+  $("#email").focus();
+};
+const closeModal = () => {
+  hideControlGlow();
+  modal.hidden = true;
+  authMessage.textContent = "";
+};
+
+$("#open-login").addEventListener("click", openModal);
+$("#close-login").addEventListener("click", closeModal);
+modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(); });
+document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeModal(); });
+
 $("#auth-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   authMessage.textContent = "Loggar in…";
-  flashControlGlow();
   const { error } = await supabase.auth.signInWithPassword({
     email: $("#email").value.trim(),
     password: $("#password").value,

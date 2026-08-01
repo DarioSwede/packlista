@@ -39,7 +39,7 @@ button{cursor:pointer}
    headers -- generic [data-dropdown]/[data-dropdown-panel] wiring lives
    in app.js's initDropdowns(), one implementation for both. ---- */
 .dropdown{position:relative}
-.icon-button{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--muted);font-size:24px;line-height:1;padding:0}
+.icon-button{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--muted);font-size:36px;line-height:1;padding:0}
 .icon-button:hover,.icon-button[aria-expanded="true"]{border-color:var(--green);color:var(--green)}
 .avatar-button{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:99px;background:var(--accent-soft);color:var(--green);font-weight:800;font-size:20px;padding:0}
 .avatar-button:hover,.avatar-button[aria-expanded="true"]{border-color:var(--green)}
@@ -277,8 +277,8 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
 .private-main{width:min(1500px,calc(100% - 40px));margin:24px auto 60px}
 /* Fun one-off, 2026-08-01: Tor wanted the "an agent is remote-controlling
    this screen" look (the pulsing red edge-glow overlay some AI computer-
-   use tools show) to flash the instant the Logga in-button is pressed --
-   see the #auth-form submit handler in app.js, flashControlGlow()/
+   use tools show) to appear as soon as the login dialog is opened --
+   see the login-modal handlers in app.js, flashControlGlow()/
    hideControlGlow(). One shared, permanently-in-the-DOM overlay (created
    once in app.js, not per-login) that just toggles .active -- pure CSS
    inset box-shadow blur pulsing at the four edges via a keyframe
