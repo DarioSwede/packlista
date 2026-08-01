@@ -1275,7 +1275,16 @@ const accountSettingsModal = $("#account-settings-modal");
 const accountMessage = $("#account-settings-message");
 
 function setAccountAvatar(key) {
-  $("#account-toggle").textContent = avatarSymbol(key);
+  const accountButton = $("#account-toggle");
+  const symbol = document.createElement("span");
+  symbol.className = "header-control-icon account-avatar-symbol";
+  symbol.setAttribute("aria-hidden", "true");
+  symbol.textContent = avatarSymbol(key);
+  const label = document.createElement("span");
+  label.className = "header-control-label";
+  const identity = (currentProfile?.display_name || currentSession?.user?.email?.split("@")[0] || "Konto").trim();
+  label.textContent = identity.split(/\s+/)[0].split(/[._-]/)[0] || "Konto";
+  accountButton.replaceChildren(symbol, label);
   document.querySelectorAll(".avatar-option").forEach((button) => {
     button.setAttribute("aria-checked", String(button.dataset.avatar === key));
   });
@@ -1471,6 +1480,7 @@ $("#rename-form").addEventListener("submit", async (event) => {
   accountMessage.textContent = error ? `Kunde inte byta namn: ${error.message}` : "Namnet är uppdaterat ✓";
   if (!error) {
     currentProfile = { ...currentProfile, display_name: name };
+    setAccountAvatar(currentProfile.avatar_key);
     if (isAdminRole(currentProfile.role)) loadAdminUsers();
   }
 });

@@ -39,10 +39,11 @@ button{cursor:pointer}
    headers -- generic [data-dropdown]/[data-dropdown-panel] wiring lives
    in app.js's initDropdowns(), one implementation for both. ---- */
 .dropdown{position:relative}
-.icon-button{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--muted);font-size:36px;line-height:1;padding:0}
+.icon-button{border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--muted)}
 .icon-button:hover,.icon-button[aria-expanded="true"]{border-color:var(--green);color:var(--green)}
-.avatar-button{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--line);border-radius:99px;background:var(--accent-soft);color:var(--green);font-weight:800;font-size:20px;padding:0}
+.avatar-button{border:1px solid var(--line);border-radius:99px;background:var(--accent-soft);color:var(--green);font-weight:800}
 .avatar-button:hover,.avatar-button[aria-expanded="true"]{border-color:var(--green)}
+.header-control{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:42px;width:auto;padding:0 12px;font-size:13px;line-height:1;white-space:nowrap}.header-control-icon{font-size:24px;line-height:1}.account-avatar-symbol{font-size:20px}.header-control-label{font-weight:700}
 .dropdown-panel{position:absolute;top:calc(100% + 8px);right:0;z-index:25;width:250px;border:1px solid var(--line);border-radius:14px;background:var(--panel);padding:16px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
 .dropdown-label{margin:0 0 2px;color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.06em}
 .dropdown-heading{margin:0 0 10px;color:var(--text);font-size:13px;font-weight:700;overflow-wrap:anywhere}
@@ -465,6 +466,7 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
   .site-header,.app-header,.hero,.planner-section,.private-main{width:calc(100% - 24px)}
   .hero h1{font-size:48px}.lead{font-size:17px}.hero-card>strong{font-size:42px}
   .online-users{max-width:30%;font-size:9px}.online-users .online-dot{display:none}
+  .header-control{width:42px;padding:0}.header-control-label{display:none}
   .admin-invite-form,.compact-form{grid-template-columns:1fr}.admin-invite-form .primary-button,.compact-form>*{grid-column:1}
   .planner-section,.private-main{width:100%;margin-bottom:0}.section-heading{padding:0 12px}
   .planner{border-left:0;border-right:0;border-radius:0;padding:20px 10px 14px}
