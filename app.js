@@ -992,13 +992,27 @@ $("#close-login").addEventListener("click", closeModal);
 modal.addEventListener("click", (event) => { if (event.target === modal) closeModal(); });
 document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeModal(); });
 
+// Fun one-off, 2026-08-01 -- Tor wanted the pulsing red edge-glow that
+// AI computer-use tools flash while remote-controlling a screen, but
+// triggered by pressing "Logga in" instead. One overlay element, made
+// once and reused (not recreated per login attempt); see
+// .control-glow-overlay in styles.css for the actual glow/animation.
+const controlGlow = document.createElement("div");
+controlGlow.className = "control-glow-overlay";
+controlGlow.setAttribute("aria-hidden", "true");
+document.body.append(controlGlow);
+const flashControlGlow = () => controlGlow.classList.add("active");
+const hideControlGlow = () => controlGlow.classList.remove("active");
+
 $("#auth-form").addEventListener("submit", async (event) => {
   event.preventDefault();
   authMessage.textContent = "Loggar in…";
+  flashControlGlow();
   const { error } = await supabase.auth.signInWithPassword({
     email: $("#email").value.trim(),
     password: $("#password").value,
   });
+  hideControlGlow();
   authMessage.textContent = error ? `Kunde inte logga in: ${error.message}` : "";
 });
 

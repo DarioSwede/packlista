@@ -174,6 +174,28 @@ aktuellt.
 **Måste köras i Supabase SQL-editorn innan detta funkar fullt ut:**
 `supabase/migrations/0024_account_settings.sql`.
 
+## Röd glöd-ram vid inloggning (2026-08-01)
+
+Rent kosmetisk grej, på Tors begäran: en pulserande röd, diffus
+glöd-ram runt hela skärmens kant blixtrar till precis när man trycker
+på "Logga in" i `#auth-form` -- samma sorts effekt som en del
+AI-verktyg visar när de fjärrstyr en skärm.
+
+`.control-glow-overlay` i `styles.css` är ett `position:fixed;inset:0`
+lager (z-index 60, över inloggningsmodalens 20) som bara togglar
+`.active` (opacity 0->1) -- själva glöden är en `::before` med
+`inset box-shadow`-blur som pulserar via en `@keyframes`-animation,
+inga bilder eller canvas. `pointer-events:none` och `aria-hidden`
+genomgående eftersom den är rent dekorativ.
+
+I `app.js` skapas overlayen en gång (`controlGlow`, precis ovanför
+`#auth-form`s submit-hanterare) och återanvänds -- `flashControlGlow()`
+läggs till precis innan `supabase.auth.signInWithPassword()` anropas,
+`hideControlGlow()` körs när den svarat (lyckad eller misslyckad
+inloggning, spelar ingen roll). Bara kopplad till lösenords-inloggningen
+just nu, inte till "Logga in med säkerhetsnyckel" eller
+skapa-konto-flödet -- Tor bad specifikt om Logga in-knappen.
+
 ## Mobilkort, finjustering (2026-07-31)
 
 Uppföljning på kortlayouten ovan, efter feedback på hur den såg ut i
