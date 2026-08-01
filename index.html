@@ -19,7 +19,7 @@
       if (storedPrefs.theme === "light") document.documentElement.classList.add("theme-light");
     } catch (e) { /* ignore malformed/blocked storage */ }
   </script>
-  <link rel="stylesheet" href="styles.css?v=47">
+  <link rel="stylesheet" href="styles.css?v=48">
 </head>
 <body>
   <div id="signed-out">
@@ -99,6 +99,7 @@
   <div id="signed-in" hidden>
     <header class="app-header">
       <a class="brand" href="./"><img src="assets/packlista-mark.svg" alt="">Packlista</a>
+      <div class="online-users" id="online-users" aria-live="polite" hidden></div>
       <div class="header-actions">
         <div class="dropdown" data-dropdown>
           <button class="icon-button" id="settings-toggle-app" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Inställningar" title="Inställningar">⚙</button>
@@ -126,6 +127,7 @@
               </span>
             </label>
             <p class="dropdown-hint">Packlista mäter inte volym, bara vikt — så bara vikt går att växla enhet på.</p>
+            <button class="quiet-button" id="open-admin-settings" type="button" hidden>Registrerade användare</button>
           </div>
         </div>
         <div class="dropdown" data-dropdown>
@@ -135,7 +137,7 @@
             <p class="dropdown-heading" id="account-email"></p>
             <p class="passkey-status" id="passkey-status"></p>
             <button class="quiet-button" id="open-account-settings">Kontoinställningar</button>
-            <button class="quiet-button" id="register-passkey">Registrera YubiKey</button>
+            <button class="quiet-button" id="register-passkey">Registrera passkey</button>
             <button class="quiet-button" id="sign-out">Logga ut</button>
           </div>
         </div>
@@ -160,13 +162,13 @@
       </form>
       <button class="secondary-button" id="sign-up">Skapa konto</button>
       <div class="auth-divider"><span>eller</span></div>
-      <button class="secondary-button" id="passkey-sign-in">Logga in med säkerhetsnyckel</button>
+      <button class="secondary-button" id="passkey-sign-in">Logga in med passkey</button>
       <p class="form-message" id="auth-message" aria-live="polite"></p>
     </section>
   </div>
 
   <div class="modal-backdrop" id="account-settings-modal" hidden>
-    <section class="login-card" role="dialog" aria-modal="true" aria-labelledby="account-settings-title">
+    <section class="login-card account-settings-card" role="dialog" aria-modal="true" aria-labelledby="account-settings-title">
       <button class="close-button" id="close-account-settings" aria-label="Stäng">×</button>
       <p class="eyebrow">Konto</p>
       <h2 id="account-settings-title">Kontoinställningar</h2>
@@ -175,6 +177,19 @@
         <input id="display-name" type="text" maxlength="60" autocomplete="name" placeholder="Ditt namn">
         <button class="secondary-button" type="submit">Byt namn</button>
       </form>
+      <fieldset class="avatar-picker">
+        <legend>Avatar</legend>
+        <div id="avatar-options" role="radiogroup" aria-label="Välj avatar"></div>
+      </fieldset>
+      <section class="admin-settings" id="admin-settings" hidden>
+        <div class="auth-divider"><span>administration</span></div>
+        <div class="admin-settings-heading">
+          <div><h3>Registrerade användare</h3><p>Online betyder aktiv i Packlista de senaste två minuterna.</p></div>
+          <button class="quiet-button" type="button" id="admin-refresh-users">Uppdatera</button>
+        </div>
+        <div class="admin-users-list" id="admin-users-list"></div>
+        <p class="form-message" id="admin-message" aria-live="polite"></p>
+      </section>
       <div class="auth-divider"><span>lösenord</span></div>
       <form id="password-form">
         <label for="current-password">Nuvarande lösenord</label>
@@ -200,6 +215,7 @@
           <div class="list-switcher" data-list-switcher hidden>
             <select data-list-select aria-label="Välj packlista"></select>
             <button data-new-list aria-label="Skapa ny packlista">＋ Ny</button>
+            <button class="list-delete-button" data-delete-list aria-label="Ta bort vald packlista">Ta bort</button>
           </div>
           <p class="list-login-hint" data-list-login-hint>Logga in för att skapa och växla mellan flera listor.</p>
         </div>
@@ -359,6 +375,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=34"></script>
+  <script type="module" src="app.js?v=35"></script>
 </body>
 </html>
