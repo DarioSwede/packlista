@@ -19,7 +19,7 @@
       if (storedPrefs.theme === "light") document.documentElement.classList.add("theme-light");
     } catch (e) { /* ignore malformed/blocked storage */ }
   </script>
-  <link rel="stylesheet" href="styles.css?v=52">
+  <link rel="stylesheet" href="styles.css?v=53">
 </head>
 <body>
   <div id="signed-out">
@@ -27,7 +27,7 @@
       <a class="brand" href="./"><img src="assets/packlista-mark.svg" alt="">Packlista</a>
       <div class="header-actions">
         <div class="dropdown" data-dropdown>
-          <button class="icon-button" id="settings-toggle-guest" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Inställningar" title="Inställningar">⚙</button>
+          <button class="icon-button header-control" id="settings-toggle-guest" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Inställningar"><span class="header-control-icon" aria-hidden="true">⚙</span><span class="header-control-label">Inställningar</span></button>
           <div class="dropdown-panel settings-panel" data-dropdown-panel hidden>
             <p class="dropdown-heading">Inställningar</p>
             <label class="dropdown-field">
@@ -102,7 +102,7 @@
       <div class="online-users" id="online-users" aria-live="polite" hidden></div>
       <div class="header-actions">
         <div class="dropdown" data-dropdown>
-          <button class="icon-button" id="settings-toggle-app" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Inställningar" title="Inställningar">⚙</button>
+          <button class="icon-button header-control" id="settings-toggle-app" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Inställningar"><span class="header-control-icon" aria-hidden="true">⚙</span><span class="header-control-label">Inställningar</span></button>
           <div class="dropdown-panel settings-panel" data-dropdown-panel hidden>
             <p class="dropdown-heading">Inställningar</p>
             <label class="dropdown-field">
@@ -131,7 +131,7 @@
           </div>
         </div>
         <div class="dropdown" data-dropdown>
-          <button class="avatar-button" id="account-toggle" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Konto"></button>
+          <button class="avatar-button header-control" id="account-toggle" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Konto"></button>
           <div class="dropdown-panel account-panel" data-dropdown-panel hidden>
             <p class="dropdown-label">Inloggad som</p>
             <p class="dropdown-heading" id="account-email"></p>
@@ -410,6 +410,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=38"></script>
+  <script type="module" src="app.js?v=39"></script>
 </body>
 </html>
