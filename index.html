@@ -127,7 +127,7 @@
               </span>
             </label>
             <p class="dropdown-hint">Packlista mäter inte volym, bara vikt — så bara vikt går att växla enhet på.</p>
-            <button class="quiet-button" id="open-admin-settings" type="button" hidden>Registrerade användare</button>
+            <button class="quiet-button" id="open-admin-settings" type="button" hidden>Administration</button>
           </div>
         </div>
         <div class="dropdown" data-dropdown>
@@ -181,19 +181,6 @@
         <legend>Avatar</legend>
         <div id="avatar-options" role="radiogroup" aria-label="Välj avatar"></div>
       </fieldset>
-      <section class="admin-settings" id="admin-settings" hidden>
-        <div class="auth-divider"><span>administration</span></div>
-        <div class="admin-settings-heading">
-          <div><h3>Packlista-användare</h3><p>Bjud in användare och se registrerade konton.</p></div>
-          <button class="quiet-button" type="button" id="admin-refresh-users">Uppdatera</button>
-        </div>
-        <form class="admin-invite-form" id="admin-invite-form">
-          <label>E-postadress<input id="admin-invite-email" type="email" autocomplete="email" placeholder="namn@example.com" required></label>
-          <button class="primary-button" type="submit">Skicka inbjudan</button>
-        </form>
-        <div class="admin-users-list" id="admin-users-list"></div>
-        <p class="form-message" id="admin-message" aria-live="polite"></p>
-      </section>
       <div class="auth-divider"><span>lösenord</span></div>
       <form id="password-form">
         <label for="current-password">Nuvarande lösenord</label>
@@ -207,6 +194,25 @@
       <p class="form-message" id="account-settings-message" aria-live="polite"></p>
       <div class="auth-divider"><span>farozon</span></div>
       <button class="secondary-button danger-button" type="button" id="delete-account">Ta bort konto</button>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="admin-modal" hidden>
+    <section class="login-card admin-card" role="dialog" aria-modal="true" aria-labelledby="admin-title">
+      <button class="close-button" id="close-admin" aria-label="Stäng">×</button>
+      <p class="eyebrow">Inställningar</p>
+      <h2 id="admin-title">Administration</h2>
+      <p>Bjud in nya användare, godkänn konton och hantera behörigheter direkt i Packlista.</p>
+      <form class="admin-invite-form" id="admin-invite-form">
+        <label>E-postadress<input id="admin-invite-email" type="email" autocomplete="email" placeholder="namn@example.com" required></label>
+        <button class="primary-button" type="submit">Skicka inbjudan</button>
+      </form>
+      <div class="admin-settings-heading">
+        <div><h3>Packlista-användare</h3><p>Registrerade och inbjudna konton.</p></div>
+        <button class="quiet-button" type="button" id="admin-refresh-users">Uppdatera</button>
+      </div>
+      <div class="admin-users-list" id="admin-users-list"></div>
+      <p class="form-message" id="admin-message" aria-live="polite"></p>
     </section>
   </div>
 

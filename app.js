@@ -1370,27 +1370,61 @@ async function loadAdminUsers() {
   const message = $("#admin-message");
   const list = $("#admin-users-list");
   message.textContent = "Hämtar användare…";
-  const { data, error } = await supabase.rpc("admin_list_packlista_users");
-  if (error) {
-    message.textContent = `Kunde inte hämta användare: ${error.message}`;
+  const { data, error } = await supabase.functions.invoke("packlista-admin", { body: { action: "list" } });
+  if (error || data?.error) {
+    message.textContent = `Kunde inte hämta användare: ${data?.error || error?.message}`;
     return;
   }
   list.replaceChildren();
-  for (const user of data || []) {
+  for (const user of data?.users || []) {
     const row = document.createElement("article");
     row.className = "admin-user-row";
     const avatar = document.createElement("div");
     avatar.className = "admin-user-avatar";
-    avatar.textContent = avatarSymbol(user.avatar_key);
+    avatar.textContent = avatarSymbol(user.avatarKey);
     const identity = document.createElement("div");
     const name = document.createElement("strong");
-    name.textContent = user.display_name || user.email || "Namnlös användare";
+    name.textContent = `${user.displayName || user.email || "Namnlös användare"}${user.id === currentSession?.user?.id ? " (du)" : ""}`;
     const meta = document.createElement("span");
-    meta.textContent = `${user.email || "Ingen e-post"} · Registrerad ${formatAdminDate(user.created_at)} · Senast inloggad ${formatAdminDate(user.last_sign_in_at)}`;
+    meta.textContent = `${user.confirmedAt ? "Godkänd" : "Väntar på godkännande"} · Registrerad ${formatAdminDate(user.createdAt)} · Senast inloggad ${formatAdminDate(user.lastSignInAt)}`;
     identity.append(name, meta);
     const status = document.createElement("b");
-    status.className = user.is_online ? "online-badge" : "offline-badge";
-    status.textContent = user.is_online ? "Online" : "Offline";
+    status.className = "admin-user-actions";
+    if (!user.confirmedAt) {
+      const approve = document.createElement("button");
+      approve.type = "button";
+      approve.className = "quiet-button admin-approve-button";
+      approve.textContent = "Godkänn";
+      approve.addEventListener("click", async () => {
+        approve.disabled = true;
+        message.textContent = "Godkänner användaren…";
+        const result = await supabase.functions.invoke("packlista-admin", { body: { action: "approve", userId: user.id } });
+        if (result.error || result.data?.error) {
+          message.textContent = result.data?.error || result.error?.message;
+          approve.disabled = false;
+          return;
+        }
+        await loadAdminUsers();
+      });
+      status.append(approve);
+    }
+    const role = document.createElement("select");
+    role.setAttribute("aria-label", `Behörighet för ${user.email}`);
+    role.disabled = user.role === "owner";
+    [["user", "Användare"], ["admin", "Administratör"]].forEach(([value, label]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = label;
+      option.selected = user.role === value || (user.role === "owner" && value === "admin");
+      role.append(option);
+    });
+    role.addEventListener("change", async () => {
+      role.disabled = true;
+      const result = await supabase.functions.invoke("packlista-admin", { body: { action: "set_role", userId: user.id, role: role.value } });
+      message.textContent = result.error || result.data?.error ? (result.data?.error || result.error?.message) : "Behörigheten är sparad ✓";
+      role.disabled = false;
+    });
+    status.append(role);
     row.append(avatar, identity, status);
     list.append(row);
   }
@@ -1411,12 +1445,12 @@ $("#admin-invite-form").addEventListener("submit", async (event) => {
   const button = event.currentTarget.querySelector('[type="submit"]');
   button.disabled = true;
   message.textContent = "Skickar inbjudan…";
-  const { error } = await supabase.functions.invoke("invite-packlista-user", {
-    body: { email: emailInput.value.trim() },
+  const { data, error } = await supabase.functions.invoke("packlista-admin", {
+    body: { action: "invite", email: emailInput.value.trim() },
   });
   button.disabled = false;
-  if (error) {
-    message.textContent = `Kunde inte skicka inbjudan: ${error.message}`;
+  if (error || data?.error) {
+    message.textContent = `Kunde inte skicka inbjudan: ${data?.error || error?.message}`;
     return;
   }
   emailInput.value = "";
@@ -1425,13 +1459,17 @@ $("#admin-invite-form").addEventListener("submit", async (event) => {
 });
 
 $("#admin-refresh-users").addEventListener("click", loadAdminUsers);
+const adminModal = $("#admin-modal");
 $("#open-admin-settings").addEventListener("click", async () => {
   const panel = $("#open-admin-settings").closest("[data-dropdown-panel]");
   if (panel) panel.hidden = true;
   $("#settings-toggle-app").setAttribute("aria-expanded", "false");
-  await openAccountSettingsModal();
-  $("#admin-settings").scrollIntoView({ block: "start" });
+  adminModal.hidden = false;
+  await loadAdminUsers();
 });
+const closeAdminModal = () => { adminModal.hidden = true; };
+$("#close-admin").addEventListener("click", closeAdminModal);
+adminModal.addEventListener("click", (event) => { if (event.target === adminModal) closeAdminModal(); });
 const openAccountSettingsModal = async () => {
   accountMessage.textContent = "";
   $("#password-form").reset();
@@ -1443,8 +1481,6 @@ const openAccountSettingsModal = async () => {
   if (!error && data) {
     currentProfile = data;
     setAccountAvatar(data.avatar_key);
-    $("#admin-settings").hidden = !isAdminRole(data.role);
-    if (isAdminRole(data.role)) await loadAdminUsers();
   }
 };
 const closeAccountSettingsModal = () => { accountSettingsModal.hidden = true; };
@@ -1464,6 +1500,7 @@ accountSettingsModal.addEventListener("click", (event) => {
 });
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && !accountSettingsModal.hidden) closeAccountSettingsModal();
+  if (event.key === "Escape" && !adminModal.hidden) closeAdminModal();
 });
 
 $("#rename-form").addEventListener("submit", async (event) => {
@@ -1608,7 +1645,6 @@ async function handleSession(session) {
       .select("display_name,avatar_key,role").eq("id", session.user.id).maybeSingle();
     currentProfile = data || { display_name: "", avatar_key: "backpack", role: "user" };
     setAccountAvatar(currentProfile.avatar_key);
-    $("#admin-settings").hidden = !isAdminRole(currentProfile.role);
     $("#open-admin-settings").hidden = !isAdminRole(currentProfile.role);
     clearInterval(presenceTimer);
     clearInterval(adminRefreshTimer);
@@ -1622,7 +1658,6 @@ async function handleSession(session) {
     $("#private-planner").replaceChildren();
     $("#passkey-status").textContent = "";
     $("#online-users").hidden = true;
-    $("#admin-settings").hidden = true;
     $("#open-admin-settings").hidden = true;
     currentProfile = null;
     clearInterval(presenceTimer);
