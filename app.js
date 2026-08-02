@@ -108,6 +108,7 @@ function createPlanner(container, { session = null } = {}) {
   let listId = null;
   let items = [];
   let categories = DEFAULT_CATEGORIES;
+  let pendingCategoryItem = null;
   let query = "";
   let filter = "alla";
   let tripDays = 6;
@@ -562,7 +563,17 @@ function createPlanner(container, { session = null } = {}) {
       option.selected = item.category === category.id;
       select.append(option);
     });
+    const addCategoryOption = document.createElement("option");
+    addCategoryOption.value = "__new_category__";
+    addCategoryOption.textContent = "＋ Ny kategori…";
+    select.append(addCategoryOption);
     select.addEventListener("change", () => {
+      if (select.value === "__new_category__") {
+        select.value = item.category;
+        pendingCategoryItem = item;
+        openCategoryModal();
+        return;
+      }
       item.category = select.value;
       if (!CONSUMABLE_CATEGORIES.has(item.category)) item.consumable = false;
       scheduleSave();
@@ -712,7 +723,7 @@ function createPlanner(container, { session = null } = {}) {
     listSettings = { ...listSettings, tripDays, targetWeightKg };
     const listName = $("[data-list-name]", root).value.trim() || "Min packlista";
     const listResult = await supabase.from("packing_lists")
-      .update({ name: listName, categories, settings: listSettings, updated_at: new Date().toISOString() })
+      .update({ name: listName, settings: listSettings, updated_at: new Date().toISOString() })
       .eq("id", listId);
     let error = listResult.error;
     if (!error && rows.length) {
@@ -790,7 +801,7 @@ function createPlanner(container, { session = null } = {}) {
       if (membership.error) throw membership.error;
       canEditList = membership.data?.access_level === "editor";
     }
-    categories = mergedCategories(list.categories);
+    categories = mergedCategories(userCategories);
     listSettings = list.settings || {};
     tripDays = Math.max(1, Number(listSettings.tripDays) || 6);
     targetWeightKg = Math.max(0, Number(listSettings.targetWeightKg) || 10);
@@ -834,6 +845,15 @@ function createPlanner(container, { session = null } = {}) {
     }
 
     const userId = session.user.id;
+    const categoryResult = await supabase.from("user_categories")
+      .select("category_key,name,icon,color").eq("user_id", userId).order("created_at");
+    if (categoryResult.error) throw categoryResult.error;
+    userCategories = categoryResult.data.map((category) => ({
+      id: category.category_key,
+      name: category.name,
+      icon: category.icon,
+      color: category.color,
+    }));
     const profile = await supabase.from("users").select("id").eq("id", userId).maybeSingle();
     if (profile.error) throw profile.error;
     if (!profile.data) {
@@ -874,6 +894,7 @@ function createPlanner(container, { session = null } = {}) {
   const categoryModal = $("[data-category-modal]", root);
   const categoryMessage = $("[data-category-message]", root);
   const defaultCategoryIds = new Set(DEFAULT_CATEGORIES.map((category) => category.id));
+  let userCategories = [];
 
   function renderCategoryManager() {
     const list = $("[data-category-manager-list]", root);
@@ -887,12 +908,21 @@ function createPlanner(container, { session = null } = {}) {
         remove.type = "button";
         remove.className = "quiet-button danger-button";
         remove.textContent = "Ta bort";
-        remove.addEventListener("click", () => {
+        remove.addEventListener("click", async () => {
           if (items.some((item) => item.category === category.id)) {
             categoryMessage.textContent = "Flytta först prylarna från kategorin.";
             return;
           }
+          if (persistent) {
+            const { error } = await supabase.from("user_categories").delete()
+              .eq("user_id", session.user.id).eq("category_key", category.id);
+            if (error) {
+              categoryMessage.textContent = `Kunde inte ta bort: ${error.message}`;
+              return;
+            }
+          }
           categories = categories.filter((candidate) => candidate.id !== category.id);
+          userCategories = userCategories.filter((candidate) => candidate.id !== category.id);
           renderCategoryManager();
           renderFilters();
           render();
@@ -905,35 +935,56 @@ function createPlanner(container, { session = null } = {}) {
     }));
   }
 
-  $("[data-manage-categories]", root).addEventListener("click", () => {
+  function openCategoryModal() {
     if (!canEditList) return;
     categoryMessage.textContent = "";
     renderCategoryManager();
     categoryModal.hidden = false;
     $("[data-category-name]", root).focus();
-  });
-  const closeCategoryModal = () => { categoryModal.hidden = true; };
+  }
+  $("[data-manage-categories]", root).addEventListener("click", openCategoryModal);
+  const closeCategoryModal = () => { categoryModal.hidden = true; pendingCategoryItem = null; };
   $("[data-category-close]", root).addEventListener("click", closeCategoryModal);
   categoryModal.addEventListener("click", (event) => { if (event.target === categoryModal) closeCategoryModal(); });
-  $("[data-category-form]", root).addEventListener("submit", (event) => {
+  $("[data-category-form]", root).addEventListener("submit", async (event) => {
     event.preventDefault();
     const name = $("[data-category-name]", root).value.trim();
     if (categories.some((category) => category.name.toLocaleLowerCase("sv-SE") === name.toLocaleLowerCase("sv-SE"))) {
       categoryMessage.textContent = "Kategorinamnet finns redan.";
       return;
     }
-    categories.push({
+    const category = {
       id: `egen-${uid()}`,
       name,
       icon: $("[data-category-icon]", root).value.trim() || "📦",
       color: $("[data-category-color]", root).value,
-    });
+    };
+    if (persistent) {
+      const { error } = await supabase.from("user_categories").insert({
+        user_id: session.user.id,
+        category_key: category.id,
+        name: category.name,
+        icon: category.icon,
+        color: category.color,
+      });
+      if (error) {
+        categoryMessage.textContent = `Kunde inte spara kategorin: ${error.message}`;
+        return;
+      }
+    }
+    userCategories.push(category);
+    categories.push(category);
+    if (pendingCategoryItem) pendingCategoryItem.category = category.id;
     $("[data-category-name]", root).value = "";
     renderCategoryManager();
     renderFilters();
     render();
     scheduleSave();
     categoryMessage.textContent = "Kategorin är tillagd ✓";
+    if (pendingCategoryItem) {
+      pendingCategoryItem = null;
+      categoryModal.hidden = true;
+    }
   });
 
   const shareModal = $("[data-share-modal]", root);
@@ -1202,7 +1253,7 @@ $("#sign-up").addEventListener("click", async () => {
   const { data, error } = await supabase.auth.signUp({
     email: $("#email").value.trim(),
     password: $("#password").value,
-    options: { emailRedirectTo: "https://darioswede.github.io/packlista/" },
+    options: { emailRedirectTo: "https://packlista.utiskogen.se/" },
   });
   authMessage.textContent = error
     ? `Kunde inte skapa konto: ${error.message}`
@@ -1210,6 +1261,9 @@ $("#sign-up").addEventListener("click", async () => {
 });
 
 function passkeyErrorMessage(error) {
+  if (error?.message?.includes("RP ID") || error?.message?.includes("relying party")) {
+    return "Passkey-domänen är felkonfigurerad. Försök igen efter att sidan har uppdaterats.";
+  }
   if (error?.code === "webauthn_credential_not_found") {
     return "Ingen passkey hittades för kontot. Logga in med e-post och välj Registrera passkey.";
   }
@@ -1460,13 +1514,16 @@ $("#admin-invite-form").addEventListener("submit", async (event) => {
 
 $("#admin-refresh-users").addEventListener("click", loadAdminUsers);
 const adminModal = $("#admin-modal");
-$("#open-admin-settings").addEventListener("click", async () => {
-  const panel = $("#open-admin-settings").closest("[data-dropdown-panel]");
+async function openAdminModal(trigger) {
+  const panel = trigger.closest("[data-dropdown-panel]");
   if (panel) panel.hidden = true;
   $("#settings-toggle-app").setAttribute("aria-expanded", "false");
+  $("#account-toggle").setAttribute("aria-expanded", "false");
   adminModal.hidden = false;
   await loadAdminUsers();
-});
+}
+$("#open-admin-settings").addEventListener("click", (event) => openAdminModal(event.currentTarget));
+$("#open-admin-account").addEventListener("click", (event) => openAdminModal(event.currentTarget));
 const closeAdminModal = () => { adminModal.hidden = true; };
 $("#close-admin").addEventListener("click", closeAdminModal);
 adminModal.addEventListener("click", (event) => { if (event.target === adminModal) closeAdminModal(); });
@@ -1646,6 +1703,7 @@ async function handleSession(session) {
     currentProfile = data || { display_name: "", avatar_key: "backpack", role: "user" };
     setAccountAvatar(currentProfile.avatar_key);
     $("#open-admin-settings").hidden = !isAdminRole(currentProfile.role);
+    $("#open-admin-account").hidden = !isAdminRole(currentProfile.role);
     clearInterval(presenceTimer);
     clearInterval(adminRefreshTimer);
     await markActive();
@@ -1659,6 +1717,7 @@ async function handleSession(session) {
     $("#passkey-status").textContent = "";
     $("#online-users").hidden = true;
     $("#open-admin-settings").hidden = true;
+    $("#open-admin-account").hidden = true;
     currentProfile = null;
     clearInterval(presenceTimer);
     clearInterval(adminRefreshTimer);
