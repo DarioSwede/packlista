@@ -29,6 +29,20 @@ const AVATARS = [
   ["mountain", "🏔️", "Fjäll"], ["canoe", "🛶", "Kanot"],
   ["campfire", "🔥", "Lägereld"], ["forest", "🌲", "Skog"],
 ];
+const CATEGORY_ICONS = [
+  ["⛺", "Tält"], ["🎒", "Ryggsäck"], ["🥾", "Kängor"], ["🧭", "Kompass"],
+  ["🏔️", "Fjäll"], ["🌲", "Skog"], ["🔥", "Eld"], ["🛶", "Kanot"],
+  ["🩹", "Sjukvård"], ["🩺", "Hälsa"], ["💊", "Medicin"], ["🧴", "Hygien"],
+  ["🪥", "Tandvård"], ["🧼", "Tvål"], ["🧻", "Toalett"], ["🦟", "Insekter"],
+  ["🍲", "Mat"], ["🥪", "Matsäck"], ["☕", "Dryck"], ["💧", "Vatten"],
+  ["🔥", "Kök"], ["⛽", "Bränsle"], ["🔪", "Verktyg"], ["🧰", "Reparation"],
+  ["🔋", "Elektronik"], ["📱", "Telefon"], ["📷", "Kamera"], ["🔦", "Belysning"],
+  ["🗺️", "Karta"], ["📡", "Kommunikation"], ["🆘", "Nödsituation"], ["🛟", "Räddning"],
+  ["👕", "Kläder"], ["🧤", "Handskar"], ["🧢", "Huvudbonad"], ["🕶️", "Solskydd"],
+  ["🛏️", "Sova"], ["🌧️", "Regn"], ["❄️", "Vinter"], ["☀️", "Sol"],
+  ["🐕", "Hund"], ["🎣", "Fiske"], ["🚲", "Cykel"], ["🚗", "Transport"],
+  ["📄", "Dokument"], ["💰", "Pengar"], ["🎲", "Nöje"], ["📦", "Övrigt"],
+];
 const avatarSymbol = (key) => AVATARS.find(([value]) => value === key)?.[1] || "🎒";
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -109,6 +123,7 @@ function createPlanner(container, { session = null } = {}) {
   let items = [];
   let categories = DEFAULT_CATEGORIES;
   let pendingCategoryItem = null;
+  let editingCategoryId = null;
   let query = "";
   let filter = "alla";
   let tripDays = 6;
@@ -893,8 +908,46 @@ function createPlanner(container, { session = null } = {}) {
 
   const categoryModal = $("[data-category-modal]", root);
   const categoryMessage = $("[data-category-message]", root);
+  const categoryIconInput = $("[data-category-icon]", root);
+  const categoryNameInput = $("[data-category-name]", root);
+  const categoryColorInput = $("[data-category-color]", root);
+  const categorySubmit = $("[data-category-submit]", root);
   const defaultCategoryIds = new Set(DEFAULT_CATEGORIES.map((category) => category.id));
   let userCategories = [];
+
+  function syncIconPicker() {
+    $("[data-category-icon-picker]", root).querySelectorAll("button").forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.icon === categoryIconInput.value));
+    });
+  }
+
+  $("[data-category-icon-picker]", root).replaceChildren(...CATEGORY_ICONS.map(([icon, label]) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "category-icon-option";
+    button.dataset.icon = icon;
+    button.textContent = icon;
+    button.title = label;
+    button.setAttribute("aria-label", label);
+    button.setAttribute("aria-pressed", "false");
+    button.addEventListener("click", () => {
+      categoryIconInput.value = icon;
+      syncIconPicker();
+    });
+    return button;
+  }));
+  categoryIconInput.addEventListener("input", syncIconPicker);
+
+  function startCategoryEdit(category) {
+    editingCategoryId = category.id;
+    categoryNameInput.value = category.name;
+    categoryNameInput.readOnly = defaultCategoryIds.has(category.id);
+    categoryIconInput.value = category.icon || "📦";
+    categoryColorInput.value = category.color || "#2f934d";
+    categorySubmit.textContent = "Spara ändringar";
+    syncIconPicker();
+    categoryIconInput.focus();
+  }
 
   function renderCategoryManager() {
     const list = $("[data-category-manager-list]", root);
@@ -903,6 +956,14 @@ function createPlanner(container, { session = null } = {}) {
       const name = document.createElement("span");
       name.textContent = `${category.icon || "📦"} ${category.name}`;
       row.append(name);
+      const actions = document.createElement("div");
+      actions.className = "category-manager-actions";
+      const edit = document.createElement("button");
+      edit.type = "button";
+      edit.className = "quiet-button";
+      edit.textContent = "Byt ikon";
+      edit.addEventListener("click", () => startCategoryEdit(category));
+      actions.append(edit);
       if (!defaultCategoryIds.has(category.id)) {
         const remove = document.createElement("button");
         remove.type = "button";
@@ -929,8 +990,9 @@ function createPlanner(container, { session = null } = {}) {
           scheduleSave();
           categoryMessage.textContent = "Kategorin är borttagen ✓";
         });
-        row.append(remove);
+        actions.append(remove);
       }
+      row.append(actions);
       return row;
     }));
   }
@@ -938,26 +1000,68 @@ function createPlanner(container, { session = null } = {}) {
   function openCategoryModal() {
     if (!canEditList) return;
     categoryMessage.textContent = "";
+    editingCategoryId = null;
+    categoryNameInput.readOnly = false;
+    categoryNameInput.value = "";
+    categoryIconInput.value = "🏕️";
+    categoryColorInput.value = "#2f934d";
+    categorySubmit.textContent = "Lägg till kategori";
+    syncIconPicker();
     renderCategoryManager();
     categoryModal.hidden = false;
     $("[data-category-name]", root).focus();
   }
   $("[data-manage-categories]", root).addEventListener("click", openCategoryModal);
-  const closeCategoryModal = () => { categoryModal.hidden = true; pendingCategoryItem = null; };
+  const closeCategoryModal = () => { categoryModal.hidden = true; pendingCategoryItem = null; editingCategoryId = null; };
   $("[data-category-close]", root).addEventListener("click", closeCategoryModal);
   categoryModal.addEventListener("click", (event) => { if (event.target === categoryModal) closeCategoryModal(); });
   $("[data-category-form]", root).addEventListener("submit", async (event) => {
     event.preventDefault();
-    const name = $("[data-category-name]", root).value.trim();
-    if (categories.some((category) => category.name.toLocaleLowerCase("sv-SE") === name.toLocaleLowerCase("sv-SE"))) {
+    const name = categoryNameInput.value.trim();
+    if (categories.some((category) => category.id !== editingCategoryId && category.name.toLocaleLowerCase("sv-SE") === name.toLocaleLowerCase("sv-SE"))) {
       categoryMessage.textContent = "Kategorinamnet finns redan.";
+      return;
+    }
+    if (editingCategoryId) {
+      const category = categories.find((candidate) => candidate.id === editingCategoryId);
+      if (!category) return;
+      const updated = {
+        ...category,
+        name: defaultCategoryIds.has(category.id) ? category.name : name,
+        icon: categoryIconInput.value.trim() || "📦",
+        color: categoryColorInput.value,
+      };
+      if (persistent) {
+        const { error } = await supabase.from("user_categories").upsert({
+          user_id: session.user.id,
+          category_key: updated.id,
+          name: updated.name,
+          icon: updated.icon,
+          color: updated.color,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "user_id,category_key" });
+        if (error) {
+          categoryMessage.textContent = `Kunde inte spara ikonen: ${error.message}`;
+          return;
+        }
+      }
+      categories = categories.map((candidate) => candidate.id === updated.id ? updated : candidate);
+      userCategories = [...userCategories.filter((candidate) => candidate.id !== updated.id), updated];
+      editingCategoryId = null;
+      categoryNameInput.readOnly = false;
+      categoryNameInput.value = "";
+      categorySubmit.textContent = "Lägg till kategori";
+      renderCategoryManager();
+      renderFilters();
+      render();
+      categoryMessage.textContent = "Ikonen är uppdaterad ✓";
       return;
     }
     const category = {
       id: `egen-${uid()}`,
       name,
-      icon: $("[data-category-icon]", root).value.trim() || "📦",
-      color: $("[data-category-color]", root).value,
+      icon: categoryIconInput.value.trim() || "📦",
+      color: categoryColorInput.value,
     };
     if (persistent) {
       const { error } = await supabase.from("user_categories").insert({
@@ -975,7 +1079,7 @@ function createPlanner(container, { session = null } = {}) {
     userCategories.push(category);
     categories.push(category);
     if (pendingCategoryItem) pendingCategoryItem.category = category.id;
-    $("[data-category-name]", root).value = "";
+    categoryNameInput.value = "";
     renderCategoryManager();
     renderFilters();
     render();

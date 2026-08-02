@@ -19,7 +19,7 @@
       if (storedPrefs.theme === "light") document.documentElement.classList.add("theme-light");
     } catch (e) { /* ignore malformed/blocked storage */ }
   </script>
-  <link rel="stylesheet" href="styles.css?v=53">
+  <link rel="stylesheet" href="styles.css?v=54">
 </head>
 <body>
   <div id="signed-out">
@@ -389,10 +389,15 @@
           <p class="eyebrow">Aktuell packlista</p>
           <h2 id="category-modal-title">Hantera kategorier</h2>
           <form data-category-form class="compact-form">
-            <label>Symbol<input data-category-icon maxlength="4" value="🏕️" required></label>
+            <label>Symbol<input data-category-icon maxlength="8" value="🏕️" required></label>
             <label>Namn<input data-category-name maxlength="30" placeholder="Exempel: Fiske" required></label>
             <label>Färg<input data-category-color type="color" value="#2f934d"></label>
-            <button class="primary-button" type="submit">Lägg till kategori</button>
+            <fieldset class="category-icon-picker">
+              <legend>Välj ikon</legend>
+              <div data-category-icon-picker role="group" aria-label="Ikoner för kategorin"></div>
+              <small>Du kan även skriva valfri emoji i symbolfältet.</small>
+            </fieldset>
+            <button class="primary-button" data-category-submit type="submit">Lägg till kategori</button>
           </form>
           <div class="category-manager-list" data-category-manager-list></div>
           <p class="form-message" data-category-message aria-live="polite"></p>
@@ -417,6 +422,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=40"></script>
+  <script type="module" src="app.js?v=41"></script>
 </body>
 </html>
