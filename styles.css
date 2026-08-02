@@ -277,7 +277,7 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
 
 .private-main{width:min(1500px,calc(100% - 40px));margin:24px auto 60px}
 /* Fun one-off, 2026-08-01: Tor wanted the "an agent is remote-controlling
-   this screen" look (the pulsing red edge-glow overlay some AI computer-
+   this screen" look (the pulsing green edge-glow overlay some AI computer-
    use tools show) to appear as soon as the login dialog is opened --
    see the login-modal handlers in app.js, flashControlGlow()/
    hideControlGlow(). One shared, permanently-in-the-DOM overlay (created
@@ -294,8 +294,8 @@ tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-
   mix-blend-mode:screen;
 }
 @keyframes control-glow-pulse{
-  0%,100%{box-shadow:inset 0 0 60px 8px rgba(255,45,60,.45),inset 0 0 140px 36px rgba(255,20,55,.28)}
-  50%{box-shadow:inset 0 0 100px 22px rgba(255,70,90,.8),inset 0 0 200px 64px rgba(255,30,70,.5)}
+  0%,100%{box-shadow:inset 0 0 60px 8px rgba(78,210,110,.45),inset 0 0 140px 36px rgba(45,180,85,.28)}
+  50%{box-shadow:inset 0 0 100px 22px rgba(125,235,145,.8),inset 0 0 200px 64px rgba(60,205,100,.5)}
 }
 .modal-backdrop{position:fixed;inset:0;z-index:20;display:grid;place-items:center;padding:20px;background:rgba(2,8,5,.78);backdrop-filter:blur(8px)}
 .login-card{position:relative;width:min(430px,100%);border:1px solid var(--line);border-radius:18px;background:var(--panel);padding:30px;box-shadow:0 30px 100px #000}
