@@ -1100,7 +1100,14 @@ function createPlanner(container, { session = null } = {}) {
       option.textContent = `${avatarSymbol(user.avatar_key)} ${user.display_name}`;
       return option;
     }));
-    select.disabled = !select.options.length;
+    // An empty picker used to look like a broken dialog: the select sat
+    // there greyed out and "Dela listan" silently did nothing (the submit
+    // handler returns early without a value). Say which of the two reasons
+    // it is instead -- the directory only contains accounts that have a
+    // public.users profile row, see migration 0028.
+    const hasCandidates = select.options.length > 0;
+    select.disabled = !hasCandidates;
+    $("[data-share-submit]", root).disabled = !hasCandidates;
     const list = $("[data-share-members]", root);
     list.replaceChildren(...(members.data || []).map((member) => {
       const row = document.createElement("article");
@@ -1123,6 +1130,11 @@ function createPlanner(container, { session = null } = {}) {
       row.append(identity, access, remove);
       return row;
     }));
+
+    if (hasCandidates) return "";
+    return (directory.data || []).length
+      ? "Listan är redan delad med alla andra konton."
+      : "Det finns inga andra konton att dela med ännu.";
   }
 
   $("[data-share-list]", root).addEventListener("click", async () => {
@@ -1130,8 +1142,7 @@ function createPlanner(container, { session = null } = {}) {
     shareMessage.textContent = "Hämtar användare…";
     shareModal.hidden = false;
     try {
-      await loadSharing();
-      shareMessage.textContent = "";
+      shareMessage.textContent = await loadSharing();
     } catch (error) {
       shareMessage.textContent = `Kunde inte hämta delning: ${error.message}`;
     }
