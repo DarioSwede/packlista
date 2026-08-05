@@ -155,6 +155,39 @@ Databasen är oförändrad — `packing_items.consumable` var alltid en
 vanlig boolean utan check-constraint, spärren låg bara i klienten.
 Ingen ny migration behövs.
 
+## Delningslistan visade bara vissa konton (2026-08-05)
+
+**Kör `supabase/migrations/0028_profile_on_signup.sql` i Supabase
+SQL-editor** — utan den fortsätter nya konton att saknas i
+delningsrutan.
+
+Symptom: "Dela packlistan" visade bara ett enda konto i användarväljaren,
+trots att adminlistan visade sju godkända konton.
+
+Orsaken är att de två vyerna läser från olika ställen:
+
+| Vy | Källa | Innehåller |
+| --- | --- | --- |
+| Adminlistan | edge-funktionen `packlista-admin` (service role) | `auth.users` — alla konton |
+| Delningsrutan | `list_packlista_directory()` | `public.users` — bara konton med profilrad |
+
+Profilraden skapades tidigare *bara* av klienten, i `loadAccount()` i
+`app.js`, alltså först när användaren loggat in och planeraren laddat
+klart. Ett konto som bjudits in men aldrig loggat in fick därför aldrig
+någon profil och blev osynligt i delningen. Det syns i adminlistan också:
+den visar `displayName || email`, så konton utan profil listas med
+e-postadress istället för namn.
+
+Migration 0028 flyttar profilskapandet till en trigger på `auth.users`
+(`handle_new_packlista_user()`), och backfillar alla befintliga konton.
+Klientens `insert` ligger kvar som skyddsnät — triggern använder
+`on conflict (id) do nothing`, så de krockar inte.
+
+Delningsrutan säger dessutom ifrån när väljaren är tom istället för att
+visa en gråad ruta där "Dela listan" inte gör något: antingen "Listan är
+redan delad med alla andra konton." eller "Det finns inga andra konton
+att dela med ännu."
+
 ## Sparad-indikering, topp-rutor och kontoinställningar (2026-07-31)
 
 - **Sparad-indikering syns nu även högst upp**, inte bara nere i

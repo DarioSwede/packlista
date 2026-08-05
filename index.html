@@ -19,7 +19,7 @@
       if (storedPrefs.theme === "light") document.documentElement.classList.add("theme-light");
     } catch (e) { /* ignore malformed/blocked storage */ }
   </script>
-  <link rel="stylesheet" href="styles.css?v=54">
+  <link rel="stylesheet" href="styles.css?v=55">
 </head>
 <body>
   <div id="signed-out">
@@ -411,7 +411,7 @@
           <form data-share-form class="compact-form">
             <label>Användare<select data-share-user required></select></label>
             <label>Behörighet<select data-share-access><option value="viewer">Kan visa</option><option value="editor">Kan redigera</option></select></label>
-            <button class="primary-button" type="submit">Dela listan</button>
+            <button class="primary-button" type="submit" data-share-submit>Dela listan</button>
           </form>
           <div class="share-members-list" data-share-members></div>
           <p class="form-message" data-share-message aria-live="polite"></p>
@@ -422,6 +422,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=41"></script>
+  <script type="module" src="app.js?v=42"></script>
 </body>
 </html>
