@@ -107,9 +107,8 @@ maskin), så F/B/★ används istället (★ är en vanlig, brett stödd
 Unicode-symbol, inget emoji). B (inte P, som det hette innan) matchar
 första bokstaven i "Bärs".
 
-- **Förbrukas** (F): oförändrad logik, bara flyttad. Fortfarande
-  begränsad till Mat/Vatten/Bränsle (`CONSUMABLE_CATEGORIES`), fortfarande
-  det som driver viktprognosen.
+- **Förbrukas** (F): driver viktprognosen. Kan sättas på vilken pryl som
+  helst, oavsett kategori (se "Förbrukas utan kategorispärr" nedan).
 - **Bärs på kroppen** (B): detta fanns tidigare som en egen tabellkolumn
   och togs bort i commit `461d61e` ("Remove worn item option"). Samma
   gamla räknelogik är tillbaka i `itemTotal()`: exakt **ett** set av
@@ -127,6 +126,34 @@ första bokstaven i "Bärs".
 Kamera-/länk-ikonerna i referensbilden (bild på prylen, köplänk) är
 medvetet inte med i detta — separat funktion, tas senare om det blir
 aktuellt.
+
+## Förbrukas utan kategorispärr (2026-08-05)
+
+`Förbrukas` gick tidigare bara att sätta på prylar i kategorierna Mat,
+Vatten och Bränsle (`CONSUMABLE_CATEGORIES`, en `Set` i `app.js`).
+Spärren är helt borttagen: F-knappen är aktiv på alla rader oavsett
+kategori, och byte av kategori nollställer inte längre flaggan.
+
+Anledningen är att listan har gott om förbrukningsvaror som inte får
+plats i de tre kategorierna — toapapper, medicin, hygienartiklar,
+gasol som ligger under en egen kategori — och de blev orimligt
+tvingade in i "Mat" för att kunna räknas ned i viktprognosen. Med
+egna kategorier (kategoriväljaren) gick det inte alls, eftersom en ny
+kategori aldrig kunde hamna i den hårdkodade `Set`:en.
+
+Borttaget i samma veva, som direkt följd:
+
+- `consumableAllowed`/`disabled`-vägen i `itemRow()`, och därmed
+  `disabled`-flaggan i `actionToggle()` (ingen anropare kvar).
+- `.item-action:disabled`-reglerna i `styles.css` (ingen knapp kan bli
+  disabled längre).
+- Filtret `consumable && CONSUMABLE_CATEGORIES.has(category)` på tre
+  ställen: viktsumman i `render()`, samma summa i notering-fältets
+  `renderPrint()`-anrop, och saneringen vid inläsning från Supabase.
+
+Databasen är oförändrad — `packing_items.consumable` var alltid en
+vanlig boolean utan check-constraint, spärren låg bara i klienten.
+Ingen ny migration behövs.
 
 ## Sparad-indikering, topp-rutor och kontoinställningar (2026-07-31)
 

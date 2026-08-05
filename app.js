@@ -22,7 +22,6 @@ const DEFAULT_CATEGORIES = [
   { id: "ovrigt", name: "Övrigt", icon: "📦", color: "#a8d4c8" },
   { id: "bransle", name: "Bränsle", icon: "⛽", color: "#d85f67" },
 ];
-const CONSUMABLE_CATEGORIES = new Set(["mat", "vatten", "bransle"]);
 const AVATARS = [
   ["backpack", "🎒", "Ryggsäck"], ["tent", "⛺", "Tält"],
   ["boots", "🥾", "Vandringskängor"], ["compass", "🧭", "Kompass"],
@@ -169,7 +168,7 @@ function createPlanner(container, { session = null } = {}) {
     });
     const total = items.reduce((sum, item) => sum + itemTotal(item), 0);
     const consumable = items
-      .filter((item) => item.consumable && CONSUMABLE_CATEGORIES.has(item.category))
+      .filter((item) => item.consumable)
       .reduce((sum, item) => sum + itemTotal(item), 0);
 
     $("[data-total]", root).textContent = formatWeight(total);
@@ -335,7 +334,7 @@ function createPlanner(container, { session = null } = {}) {
     const dailyReduction = days > 1 ? consumable / (days - 1) : 0;
     $("[data-forecast-caption]", root).textContent = consumable
       ? `${formatWeight(dailyReduction)} lättare per dag från dag 1 till dag ${days}.`
-      : `Markera mat, vatten eller bränsle som “Förbrukas” för att se hur vikten minskar.`;
+      : `Markera prylar som “Förbrukas” för att se hur vikten minskar.`;
 
     const grouped = categories.map((category) => ({
       ...category,
@@ -401,7 +400,7 @@ function createPlanner(container, { session = null } = {}) {
         renderPrint(
           items.reduce((sum, candidate) => sum + itemTotal(candidate), 0),
           items.reduce((sum, candidate) => sum + itemTotal(candidate), 0)
-            - items.filter((candidate) => candidate.consumable && CONSUMABLE_CATEGORIES.has(candidate.category))
+            - items.filter((candidate) => candidate.consumable)
               .reduce((sum, candidate) => sum + itemTotal(candidate), 0),
           missing.length,
         );
@@ -488,7 +487,7 @@ function createPlanner(container, { session = null } = {}) {
   // itemRow below) -- always in the DOM/tab order so keyboard users can
   // Tab to it, just visually hidden until the row is hovered or one of
   // its own buttons has focus (see .item-actions in styles.css).
-  function actionToggle(icon, label, checked, onToggle, { disabled = false, title } = {}) {
+  function actionToggle(icon, label, checked, onToggle, { title } = {}) {
     const btn = document.createElement("button");
     btn.type = "button";
     btn.className = "item-action";
@@ -496,7 +495,6 @@ function createPlanner(container, { session = null } = {}) {
     btn.setAttribute("aria-label", label);
     btn.setAttribute("aria-pressed", String(checked));
     btn.classList.toggle("active", checked);
-    btn.disabled = disabled;
     btn.title = title || label;
     btn.addEventListener("click", () => {
       onToggle();
@@ -519,10 +517,9 @@ function createPlanner(container, { session = null } = {}) {
 
     // Hover/focus-reveal row for the three per-item flags that used to be
     // (or, for favorite, could only ever have been) dedicated table
-    // columns. Consumable's category restriction and worn's "one set off
-    // the pack weight" behavior are unchanged from before, just moved from
-    // a checkbox column to here -- see itemTotal() for the worn math.
-    const consumableAllowed = CONSUMABLE_CATEGORIES.has(item.category);
+    // columns. Worn's "one set off the pack weight" behavior is unchanged
+    // from before, just moved from a checkbox column to here -- see
+    // itemTotal() for the worn math.
     const actions = document.createElement("div");
     actions.className = "item-actions";
     actions.append(
@@ -534,12 +531,9 @@ function createPlanner(container, { session = null } = {}) {
       // "B" (not "P") matches the first letter of "Bärs", the word the
       // label/tooltip actually leads with.
       actionToggle("F", "Förbrukas", item.consumable, () => { item.consumable = !item.consumable; }, {
-        disabled: !consumableAllowed,
-        title: !consumableAllowed
-          ? "Förbrukning kan endast användas för Mat, Vatten och Bränsle."
-          : item.consumable
-            ? "Förbrukas -- vikten minskar jämnt över turens valda antal dagar. Klicka för att avmarkera."
-            : "Markera som förbrukas (mat, vatten, bränsle).",
+        title: item.consumable
+          ? "Förbrukas -- vikten minskar jämnt över turens valda antal dagar. Klicka för att avmarkera."
+          : "Markera som förbrukas, till exempel mat, vatten, gas, medicin eller toapapper.",
       }),
       actionToggle("B", "Bärs på kroppen", item.worn, () => { item.worn = !item.worn; }, {
         title: item.worn
@@ -590,7 +584,6 @@ function createPlanner(container, { session = null } = {}) {
         return;
       }
       item.category = select.value;
-      if (!CONSUMABLE_CATEGORIES.has(item.category)) item.consumable = false;
       scheduleSave();
       render();
     });
@@ -840,7 +833,6 @@ function createPlanner(container, { session = null } = {}) {
     items = stored.data.map((item) => ({
       ...item,
       id: item.client_id,
-      consumable: item.consumable && CONSUMABLE_CATEGORIES.has(item.category),
     }));
     saveState.textContent = "Sparad ✓";
     renderListSwitcher();

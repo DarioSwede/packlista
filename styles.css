@@ -233,8 +233,6 @@ td input[type=checkbox]:disabled{cursor:not-allowed;opacity:.25}
 tr:hover .item-action,.item-actions:focus-within .item-action{opacity:1;pointer-events:auto}
 .item-action:hover{border-color:var(--green);color:var(--green)}
 .item-action.active{border-color:var(--green);background:var(--accent-soft);color:var(--green)}
-.item-action:disabled{opacity:.3;cursor:not-allowed}
-.item-action:disabled:hover{border-color:var(--line);color:var(--muted)}
 .item-action:focus-visible{outline:2px solid var(--green);outline-offset:1px}
 .weight-field{display:grid;grid-template-columns:minmax(86px,1fr) auto;align-items:center;gap:7px}
 .weighed-check{display:flex;align-items:center;gap:4px;color:var(--muted);font-size:11px;white-space:nowrap;cursor:pointer}
