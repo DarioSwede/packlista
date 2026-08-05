@@ -65,6 +65,7 @@ function loadPrefs() {
     unit: stored.unit === "us" ? "us" : "metric",
     density: stored.density === "compact" ? "compact" : "comfortable",
     theme: stored.theme === "light" ? "light" : "dark",
+    chart: stored.chart === "donut" ? "donut" : "bar",
   };
 }
 let prefs = loadPrefs();
@@ -345,32 +346,133 @@ function createPlanner(container, { session = null } = {}) {
       ...category,
       weight: items.filter((item) => item.category === category.id).reduce((sum, item) => sum + itemTotal(item), 0),
     }));
-    const maxWeight = Math.max(1, ...grouped.map((category) => category.weight));
     const chart = $("[data-category-chart]", root);
-    $("[data-category-empty]", root).hidden = true;
     $("[data-clear-category]", root).hidden = filter === "alla";
-    chart.replaceChildren(...grouped.map((category) => {
+    root.querySelectorAll("[data-chart-view]").forEach((button) => {
+      const isCurrent = button.dataset.chartView === prefs.chart;
+      button.classList.toggle("active", isCurrent);
+      button.setAttribute("aria-pressed", String(isCurrent));
+    });
+    const categoryTotal = grouped.reduce((sum, category) => sum + category.weight, 0);
+    // The donut only has room for categories that actually weigh
+    // something; the bar chart keeps listing the empty ones so you can see
+    // which parts of the list are still unfilled.
+    const withWeight = grouped.filter((category) => category.weight > 0);
+    $("[data-category-empty]", root).hidden = !(prefs.chart === "donut" && !withWeight.length);
+    const maxWeight = Math.max(1, ...grouped.map((category) => category.weight));
+    chart.replaceChildren(
+      ...(prefs.chart === "donut"
+        ? (withWeight.length ? [donutChart(withWeight, categoryTotal), categoryLegend(withWeight, categoryTotal)] : [])
+        : grouped.map((category) => categoryBar(category, maxWeight))),
+    );
+  }
+
+  function toggleCategoryFilter(categoryId) {
+    filter = filter === categoryId ? "alla" : categoryId;
+    filterSelect.value = filter;
+    render();
+  }
+
+  function categoryBar(category, maxWeight) {
+    const button = document.createElement("button");
+    button.className = "category-bar";
+    button.classList.toggle("active", filter === category.id);
+    button.setAttribute("aria-label", `Visa ${category.name}, ${formatWeight(category.weight)}`);
+    const name = document.createElement("span");
+    name.textContent = `${category.icon || ""} ${category.name}`.trim();
+    const track = document.createElement("i");
+    const fill = document.createElement("b");
+    fill.style.width = category.weight ? `${(category.weight / maxWeight) * 100}%` : "0";
+    fill.style.background = category.color || "var(--green)";
+    track.append(fill);
+    const weight = document.createElement("strong");
+    weight.textContent = formatWeight(category.weight);
+    button.append(name, track, weight);
+    button.addEventListener("click", () => toggleCategoryFilter(category.id));
+    return button;
+  }
+
+  // Ring segments are drawn as stroked circle arcs rather than paths: one
+  // circle per category, sized with stroke-dasharray and rotated into
+  // place with stroke-dashoffset. That avoids arc-path maths entirely and
+  // degrades gracefully when a single category holds the whole weight,
+  // where a path-based sweep of exactly 360° collapses to nothing.
+  const DONUT = { size: 200, radius: 70, width: 34 };
+
+  function donutChart(categories, total) {
+    const circumference = 2 * Math.PI * DONUT.radius;
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    svg.setAttribute("viewBox", `0 0 ${DONUT.size} ${DONUT.size}`);
+    svg.setAttribute("class", "donut");
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", `Viktfördelning: ${categories
+      .map((category) => `${category.name} ${formatWeight(category.weight)}`).join(", ")}`);
+
+    let offset = 0;
+    for (const category of categories) {
+      const share = total ? category.weight / total : 0;
+      const segment = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      segment.setAttribute("class", "donut-segment");
+      segment.setAttribute("cx", DONUT.size / 2);
+      segment.setAttribute("cy", DONUT.size / 2);
+      segment.setAttribute("r", DONUT.radius);
+      segment.setAttribute("fill", "none");
+      segment.setAttribute("stroke", category.color || "var(--green)");
+      segment.setAttribute("stroke-width", DONUT.width);
+      // A hairline gap keeps neighbouring segments apart without a border,
+      // but never so large that it eats a small slice completely.
+      const length = Math.max(0, share * circumference - Math.min(2, share * circumference * 0.25));
+      segment.setAttribute("stroke-dasharray", `${length} ${circumference - length}`);
+      segment.setAttribute("stroke-dashoffset", String(-offset));
+      segment.classList.toggle("dimmed", filter !== "alla" && filter !== category.id);
+      const title = document.createElementNS("http://www.w3.org/2000/svg", "title");
+      title.textContent = `${category.name}: ${formatWeight(category.weight)}`;
+      segment.append(title);
+      // The legend below carries the keyboard and screen-reader path, so
+      // the segments are pointer sugar only.
+      segment.addEventListener("click", () => toggleCategoryFilter(category.id));
+      svg.append(segment);
+      offset += share * circumference;
+    }
+
+    const caption = document.createElementNS("http://www.w3.org/2000/svg", "text");
+    caption.setAttribute("class", "donut-total");
+    caption.setAttribute("x", DONUT.size / 2);
+    caption.setAttribute("y", DONUT.size / 2);
+    caption.setAttribute("text-anchor", "middle");
+    caption.setAttribute("dominant-baseline", "middle");
+    caption.textContent = formatWeight(total);
+    svg.append(caption);
+
+    const wrap = document.createElement("div");
+    wrap.className = "donut-wrap";
+    wrap.append(svg);
+    return wrap;
+  }
+
+  function categoryLegend(categories, total) {
+    const list = document.createElement("div");
+    list.className = "donut-legend";
+    list.append(...categories.map((category) => {
+      const share = total ? Math.round((category.weight / total) * 100) : 0;
       const button = document.createElement("button");
-      button.className = "category-bar";
+      button.className = "legend-row";
+      button.type = "button";
       button.classList.toggle("active", filter === category.id);
-      button.setAttribute("aria-label", `Visa ${category.name}, ${formatWeight(category.weight)}`);
+      button.setAttribute("aria-label", `Visa ${category.name}, ${formatWeight(category.weight)}, ${share} procent`);
+      const swatch = document.createElement("i");
+      swatch.style.background = category.color || "var(--green)";
       const name = document.createElement("span");
       name.textContent = `${category.icon || ""} ${category.name}`.trim();
-      const track = document.createElement("i");
-      const fill = document.createElement("b");
-      fill.style.width = category.weight ? `${(category.weight / maxWeight) * 100}%` : "0";
-      fill.style.background = category.color || "var(--green)";
-      track.append(fill);
+      const percent = document.createElement("small");
+      percent.textContent = `${share} %`;
       const weight = document.createElement("strong");
       weight.textContent = formatWeight(category.weight);
-      button.append(name, track, weight);
-      button.addEventListener("click", () => {
-        filter = filter === category.id ? "alla" : category.id;
-        filterSelect.value = filter;
-        render();
-      });
+      button.append(swatch, name, percent, weight);
+      button.addEventListener("click", () => toggleCategoryFilter(category.id));
       return button;
     }));
+    return list;
   }
 
   function renderShopping(missing) {
@@ -1205,6 +1307,15 @@ function createPlanner(container, { session = null } = {}) {
     filterSelect.value = filter;
     render();
   });
+  // Chart type is a display preference like density and theme: kept in
+  // localStorage, applied to every mounted planner at once.
+  root.querySelectorAll("[data-chart-view]").forEach((button) => {
+    button.addEventListener("click", () => {
+      prefs.chart = button.dataset.chartView === "donut" ? "donut" : "bar";
+      savePrefs();
+      refreshAllPlanners();
+    });
+  });
   $("[data-list-name]", root).addEventListener("change", (event) => {
     event.target.value = event.target.value.trim() || "Min packlista";
     scheduleSave();
@@ -1788,6 +1899,74 @@ $("#admin-invite-form").addEventListener("submit", async (event) => {
 });
 
 $("#admin-refresh-users").addEventListener("click", loadAdminUsers);
+
+// ---- feedback inbox (admin) ----------------------------------------
+const FEEDBACK_KIND_LABEL = { bug: "Felaktighet", idea: "Förslag" };
+
+async function loadAdminFeedback() {
+  if (!isAdminRole(currentProfile?.role)) return;
+  const message = $("#admin-feedback-message");
+  const list = $("#admin-feedback-list");
+  message.textContent = "Hämtar tips…";
+  const { data, error } = await supabase.rpc("admin_list_feedback");
+  if (error) {
+    message.textContent = `Kunde inte hämta tips: ${error.message}`;
+    return;
+  }
+  const entries = data || [];
+  message.textContent = entries.length
+    ? `${entries.filter((entry) => entry.status === "new").length} ohanterade av ${entries.length}`
+    : "Inga tips har skickats in ännu.";
+  list.replaceChildren(...entries.map((entry) => {
+    const row = document.createElement("article");
+    row.className = "feedback-entry";
+    row.classList.toggle("handled", entry.status === "handled");
+
+    const head = document.createElement("div");
+    const kind = document.createElement("b");
+    kind.className = `feedback-kind ${entry.kind}`;
+    kind.textContent = FEEDBACK_KIND_LABEL[entry.kind] || entry.kind;
+    const meta = document.createElement("span");
+    meta.textContent = [
+      formatAdminDate(entry.created_at),
+      entry.display_name || "Utloggad besökare",
+      entry.contact || "",
+    ].filter(Boolean).join(" · ");
+    head.append(kind, meta);
+
+    // Everything below is user-submitted text: it goes in through
+    // textContent only, never innerHTML.
+    const body = document.createElement("p");
+    body.textContent = entry.message;
+
+    const source = document.createElement("small");
+    source.textContent = [entry.page_url, entry.user_agent].filter(Boolean).join(" · ");
+
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "quiet-button";
+    toggle.textContent = entry.status === "handled" ? "Öppna igen" : "Markera som hanterad";
+    toggle.addEventListener("click", async () => {
+      toggle.disabled = true;
+      const result = await supabase.rpc("admin_set_feedback_status", {
+        entry_id: entry.id,
+        next_status: entry.status === "handled" ? "new" : "handled",
+      });
+      if (result.error) {
+        message.textContent = `Kunde inte uppdatera: ${result.error.message}`;
+        toggle.disabled = false;
+        return;
+      }
+      await loadAdminFeedback();
+    });
+
+    row.append(head, body, source, toggle);
+    return row;
+  }));
+}
+
+$("#admin-refresh-feedback").addEventListener("click", loadAdminFeedback);
+
 const adminModal = $("#admin-modal");
 async function openAdminModal(trigger) {
   const panel = trigger.closest("[data-dropdown-panel]");
@@ -1795,13 +1974,69 @@ async function openAdminModal(trigger) {
   $("#settings-toggle-app").setAttribute("aria-expanded", "false");
   $("#account-toggle").setAttribute("aria-expanded", "false");
   adminModal.hidden = false;
-  await loadAdminUsers();
+  await Promise.all([loadAdminUsers(), loadAdminFeedback()]);
 }
 $("#open-admin-settings").addEventListener("click", (event) => openAdminModal(event.currentTarget));
 $("#open-admin-account").addEventListener("click", (event) => openAdminModal(event.currentTarget));
 const closeAdminModal = () => { adminModal.hidden = true; };
 $("#close-admin").addEventListener("click", closeAdminModal);
 adminModal.addEventListener("click", (event) => { if (event.target === adminModal) closeAdminModal(); });
+
+// ---- feedback (open to everyone, including the signed-out planner,
+// which is where a first-time visitor is most likely to hit something
+// broken -- see migration 0029 for the insert policy that allows it).
+const feedbackModal = $("#feedback-modal");
+const feedbackFormMessage = $("#feedback-form-message");
+const feedbackText = $("#feedback-message");
+function openFeedbackModal() {
+  $("#feedback-form").reset();
+  feedbackFormMessage.textContent = "";
+  if (currentSession?.user?.email) $("#feedback-contact").value = currentSession.user.email;
+  feedbackModal.hidden = false;
+  feedbackText.focus();
+}
+const closeFeedbackModal = () => { feedbackModal.hidden = true; };
+document.querySelectorAll("[data-open-feedback]").forEach((button) => {
+  button.addEventListener("click", openFeedbackModal);
+});
+$("#close-feedback").addEventListener("click", closeFeedbackModal);
+feedbackModal.addEventListener("click", (event) => {
+  if (event.target === feedbackModal) closeFeedbackModal();
+});
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && !feedbackModal.hidden) closeFeedbackModal();
+});
+$("#feedback-form").addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const message = feedbackText.value.trim();
+  if (message.length < 3) {
+    feedbackFormMessage.textContent = "Skriv några ord om vad du menar.";
+    feedbackText.focus();
+    return;
+  }
+  const submit = event.currentTarget.querySelector('[type="submit"]');
+  submit.disabled = true;
+  feedbackFormMessage.textContent = "Skickar…";
+  const contact = $("#feedback-contact").value.trim();
+  const { error } = await supabase.from("feedback").insert({
+    user_id: currentSession?.user?.id || null,
+    kind: $("#feedback-kind input:checked").value === "bug" ? "bug" : "idea",
+    message: message.slice(0, 4000),
+    contact: contact ? contact.slice(0, 200) : null,
+    // Which page and browser the report came from -- the two things
+    // always missing from a bug report written after the fact.
+    page_url: location.href.slice(0, 500),
+    user_agent: navigator.userAgent.slice(0, 400),
+  });
+  submit.disabled = false;
+  if (error) {
+    feedbackFormMessage.textContent = `Kunde inte skicka: ${error.message}`;
+    return;
+  }
+  feedbackFormMessage.textContent = "Tack! Tipset är skickat ✓";
+  feedbackText.value = "";
+  setTimeout(() => { if (!feedbackModal.hidden) closeFeedbackModal(); }, 1200);
+});
 const openAccountSettingsModal = async () => {
   accountMessage.textContent = "";
   $("#password-form").reset();

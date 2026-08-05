@@ -19,7 +19,7 @@
       if (storedPrefs.theme === "light") document.documentElement.classList.add("theme-light");
     } catch (e) { /* ignore malformed/blocked storage */ }
   </script>
-  <link rel="stylesheet" href="styles.css?v=56">
+  <link rel="stylesheet" href="styles.css?v=57">
 </head>
 <body>
   <div id="signed-out">
@@ -54,6 +54,7 @@
             <p class="dropdown-hint">Packlista mäter inte volym, bara vikt — så bara vikt går att växla enhet på.</p>
           </div>
         </div>
+        <button class="quiet-button header-control feedback-button" data-open-feedback type="button"><span class="header-control-icon" aria-hidden="true">💡</span><span class="header-control-label">Tipsa</span></button>
         <button class="quiet-button" id="open-login">Logga in</button>
       </div>
     </header>
@@ -101,6 +102,7 @@
       <a class="brand" href="./"><img src="assets/packlista-mark.svg" alt="">Packlista</a>
       <div class="online-users" id="online-users" aria-live="polite" hidden></div>
       <div class="header-actions">
+        <button class="quiet-button header-control feedback-button" data-open-feedback type="button"><span class="header-control-icon" aria-hidden="true">💡</span><span class="header-control-label">Tipsa</span></button>
         <div class="dropdown" data-dropdown>
           <button class="icon-button header-control" id="settings-toggle-app" type="button" aria-haspopup="true" aria-expanded="false" aria-label="Inställningar"><span class="header-control-icon" aria-hidden="true">⚙</span><span class="header-control-label">Inställningar</span></button>
           <div class="dropdown-panel settings-panel" data-dropdown-panel hidden>
@@ -214,6 +216,40 @@
       </div>
       <div class="admin-users-list" id="admin-users-list"></div>
       <p class="form-message" id="admin-message" aria-live="polite"></p>
+      <div class="admin-settings-heading">
+        <div><h3>Tips och felrapporter</h3><p>Inskickat från Tipsa-knappen i toppen.</p></div>
+        <button class="quiet-button" type="button" id="admin-refresh-feedback">Uppdatera</button>
+      </div>
+      <div class="feedback-inbox" id="admin-feedback-list"></div>
+      <p class="form-message" id="admin-feedback-message" aria-live="polite"></p>
+    </section>
+  </div>
+
+  <div class="modal-backdrop" id="feedback-modal" hidden>
+    <section class="login-card" role="dialog" aria-modal="true" aria-labelledby="feedback-title">
+      <button class="close-button" id="close-feedback" aria-label="Stäng">×</button>
+      <p class="eyebrow">Hjälp till</p>
+      <h2 id="feedback-title">Tipsa om något</h2>
+      <p>Hittade du ett fel, eller saknar du en funktion? Skriv några rader — det går fram direkt till den som utvecklar Packlista.</p>
+      <form id="feedback-form">
+        <fieldset class="source-picker" id="feedback-kind">
+          <legend>Vad gäller det?</legend>
+          <label class="source-card">
+            <input type="radio" name="feedback-kind" value="idea" checked>
+            <span><strong>Förslag</strong><small>En funktion du skulle vilja ha.</small></span>
+          </label>
+          <label class="source-card">
+            <input type="radio" name="feedback-kind" value="bug">
+            <span><strong>Felaktighet</strong><small>Något som inte fungerar som det ska.</small></span>
+          </label>
+        </fieldset>
+        <label for="feedback-message">Beskrivning</label>
+        <textarea id="feedback-message" rows="5" maxlength="4000" required placeholder="Beskriv gärna vad du gjorde och vad du förväntade dig."></textarea>
+        <label for="feedback-contact">E-post om du vill ha svar (valfritt)</label>
+        <input id="feedback-contact" type="email" autocomplete="email" maxlength="200" placeholder="namn@example.com">
+        <p class="form-message" id="feedback-form-message" aria-live="polite"></p>
+        <button class="primary-button" type="submit">Skicka</button>
+      </form>
     </section>
   </div>
 
@@ -257,6 +293,10 @@
                 <h3>Klicka för att filtrera listan</h3>
               </div>
               <button class="clear-filter" data-clear-category hidden>Visa alla</button>
+            </div>
+            <div class="chart-toggle" role="group" aria-label="Diagramtyp">
+              <button type="button" data-chart-view="bar" aria-pressed="true">Stapel</button>
+              <button type="button" data-chart-view="donut" aria-pressed="false">Cirkel</button>
             </div>
             <div class="category-chart" data-category-chart></div>
             <div class="empty-insight" data-category-empty>Vikter per kategori visas när du lagt till prylar.</div>
@@ -442,6 +482,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=43"></script>
+  <script type="module" src="app.js?v=44"></script>
 </body>
 </html>
