@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>transfer.js — testfall</title>
+<style>
+  body{margin:0;background:#07130d;color:#e9f3ec;font:14px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;padding:24px}
+  h1{margin:0 0 4px;font-family:Georgia,serif;font-size:26px;font-weight:500}
+  p{margin:0 0 18px;color:#8fa89a}
+  #out{white-space:pre-wrap}
+  .ok{color:#9ae691}.fail{color:#ef6b6b}
+</style>
+</head>
+<body>
+<h1>transfer.js</h1>
+<p>Öppna filen över http (t.ex. <code>python3 -m http.server</code>) — ES-moduler laddas inte över file://.</p>
+<pre id="out">kör…</pre>
+<script type="module">
+// Fixturbaserade testfall för import/export. Ingen testlöpare och inga
+// beroenden -- transfer.js är avsiktligt fri från DOM och Supabase, så
+// den går att köra så här.
+//
+// Fixturerna speglar riktiga exportfiler men innehåller påhittade
+// uppgifter. Goulight-arkivet nedan är handbyggt för att matcha hur
+// deras export ser ut: ZIP64 med storleksfälten satta till 0xffffffff
+// och de riktiga värdena i extrafält 0x0001.
+import { parseImport, itemsToCsv, listToJson, parseCsv, readZipJson, readImportFile } from "./transfer.js?v=1";
+
+const results = [];
+const check = (label, actual, expected) => {
+  const a = JSON.stringify(actual);
+  const e = JSON.stringify(expected);
+  results.push({ ok: a === e, label, actual: a, expected: e });
+};
+
+// ---- LighterPack-CSV, med ounce-rad och citerat fält som innehåller komma
+const lighterpack = [
+  'Item Name,Category,desc,qty,weight,unit,url,price,worn,consumable',
+  'Running Tights,Clothing,"Nike Dri-Fit Challenger, L",1,259.97,g,https://example.com/x,60.00,worn,',
+  'Peanut butter,Food,,2,4.5,oz,,,,consumable',
+  'Tent,Shelter,Big Agnes,1,1.2,kg,,,,',
+].join('\n');
+{
+  const { items, warnings } = parseImport(lighterpack, 'lighterpack.csv');
+  check('lighterpack: antal rader', items.length, 3);
+  check('lighterpack: namn', items.map(i => i.name), ['Running Tights', 'Peanut butter', 'Tent']);
+  check('lighterpack: gram', items.map(i => i.weight), [260, 128, 1200]);
+  check('lighterpack: kategorier', items.map(i => i.categoryName), ['Clothing', 'Food', 'Shelter']);
+  check('lighterpack: antal', items.map(i => i.quantity), [1, 2, 1]);
+  check('lighterpack: worn', items.map(i => i.worn), [true, false, false]);
+  check('lighterpack: consumable', items.map(i => i.consumable), [false, true, false]);
+  check('lighterpack: notering med komma + pris', items[0].note, 'Nike Dri-Fit Challenger, L · https://example.com/x · Pris: 60.00');
+  check('lighterpack: inga varningar', warnings, []);
+}
+
+// ---- Svenskt kalkylblad: semikolon, decimalkomma, enhet i rubriken, å/ä/ö
+const swedish = [
+  'Artikel;Kategori;Vikt (g);Antal;Bärs;Förbrukas;Notering',
+  'Sovsäck;Sova;1 250,5;1;;;Cumulus 450',
+  'Gasol;Kök;230;2;;ja;',
+  'Mössa;Kläder;45;1;ja;;',
+].join('\r\n');
+{
+  const { items } = parseImport(swedish, 'min lista.csv');
+  check('svensk: gram med decimalkomma', items.map(i => i.weight), [1251, 230, 45]);
+  check('svensk: antal', items.map(i => i.quantity), [1, 2, 1]);
+  check('svensk: förbrukas', items.map(i => i.consumable), [false, true, false]);
+  check('svensk: bärs', items.map(i => i.worn), [false, false, true]);
+  check('svensk: kategori', items.map(i => i.categoryName), ['Sova', 'Kök', 'Kläder']);
+  check('svensk: notering', items[0].note, 'Cumulus 450');
+}
+
+// ---- Vårt eget JSON, tur och retur
+const appItems = [
+  { name: 'Ryggsäck', category: 'ryggsack', weight: 1200, quantity: 1, owned: true, consumable: false, worn: false, favorite: true, weighed: true, note: 'Osprey' },
+  { name: 'Toapapper', category: 'egen-1', weight: 250, quantity: 1, owned: false, consumable: true, worn: false, favorite: false, weighed: false, note: '' },
+];
+const cats = [
+  { id: 'ryggsack', name: 'Ryggsäck', icon: '🎒' },
+  { id: 'egen-1', name: 'Hygien', icon: '🧻' },
+];
+{
+  const json = listToJson({ name: 'Sarek 2026', settings: { tripDays: 8 }, categories: cats, items: appItems });
+  const { items, listName, settings } = parseImport(JSON.stringify(json), 'x.json');
+  check('json: listnamn', listName, 'Sarek 2026');
+  check('json: settings bevaras', settings, { tripDays: 8 });
+  check('json: vikter', items.map(i => i.weight), [1200, 250]);
+  check('json: kategorinamn', items.map(i => i.categoryName), ['Ryggsäck', 'Hygien']);
+  check('json: flaggor bevaras', items.map(i => [i.owned, i.consumable, i.favorite, i.weighed]), [[true, false, true, true], [false, true, false, false]]);
+}
+
+// ---- CSV vi skriver måste kunna läsas av vår egen läsare
+{
+  const csv = itemsToCsv(appItems, (id) => cats.find(c => c.id === id)?.name || id);
+  check('csv: rubrikrad', csv.replace(/^﻿/, '').split('\r\n')[0], 'Item Name,Category,desc,qty,weight,unit,url,price,worn,consumable');
+  check('csv: BOM finns', csv.charCodeAt(0), 0xFEFF);
+  const { items } = parseImport(csv, 'x.csv');
+  check('csv: tur och retur vikt', items.map(i => i.weight), [1200, 250]);
+  check('csv: tur och retur förbrukas', items.map(i => i.consumable), [false, true]);
+}
+
+// ---- Goulight: ZIP64-arkiv med data.json, prylar nästlade under kategorier.
+// Fältnamnen (description/notes/worn_quantity/consumable_weight/image_url)
+// är hämtade från en riktig export.
+const GOULIGHT_ZIP64 = 'UEsDBC0AAAAIAFF1pVzppEIj//////////8JABQAZGF0YS5qc29uAQAQAD4DAAAAAAAAQQEAAAAAAACdUctOwzAQ/JXIZ9omUakgJ8SdXugJhCIn2aYr/Aj2mhZV/Rv4kv4YdpSWUDUIVTnNzO44M7tlsGm0obziBCyLWBqns1F8M4qvF8k0m6ZZcvvEriLmLBivbxlIjiJMKi7VHWy4bASMSy3DlOdal7nXAm6H83cwuESovLLkwsLOK9YVtjTYEGrleeWE8KxAS9bD5+3R6pEbeA1eFZxZaFwhsDwYe6L0OWptEE5s7vWghw35tanagIknkECerC/2n4IGHdaA9Yo8TpM4HsehLoUBszrsvDmuCOmjs19ro3p/HGDeG+k8S62sk7wQ0E93JPPjm9280tRm7iBKXkPuTHuqFVFjs8mkd61JgaJK2O7FH+Mn5gOn/9WUDtTkjDxn0QnR0uy/VDTXpgb2q7fZ37Wll9VGxg21dnjxktrSUFv4vgFQSwECLQAtAAAACABRdaVc6aRCI///////////CQAUAAAAAAAAAAAAAAAAAAAAZGF0YS5qc29uAQAQAD4DAAAAAAAAQQEAAAAAAABQSwUGAAAAAAEAAQBLAAAAfAEAAAAA';
+const zipBytes = () => Uint8Array.from(atob(GOULIGHT_ZIP64), (char) => char.charCodeAt(0));
+{
+  const text = await readZipJson(zipBytes().buffer);
+  check('goulight: zip64 packas upp', JSON.parse(text).lists[0].name, 'Sarek');
+
+  const file = new File([zipBytes()], 'goulight-export-2026-08-05.zip');
+  const read = await readImportFile(file);
+  check('goulight: .zip strippas från namnet', read.filename, 'goulight-export-2026-08-05');
+
+  const { items, listName, warnings } = parseImport(read.text, read.filename);
+  check('goulight: listnamn från filen', listName, 'Sarek');
+  check('goulight: prylar plattas ut', items.map(i => i.name), ['Tält', 'Turmat']);
+  check('goulight: kategori ärvs från föräldern', items.map(i => i.categoryName), ['Bo', 'Mat']);
+  check('goulight: vikter i gram', items.map(i => i.weight), [2100, 260]);
+  check('goulight: antal', items.map(i => i.quantity), [1, 2]);
+  check('goulight: förbrukas', items.map(i => i.consumable), [false, true]);
+  check('goulight: bärs', items.map(i => i.worn), [false, false]);
+  check('goulight: description blir notering', items.map(i => i.note), ['', 'Turmat från Norge']);
+  check('goulight: inga varningar', warnings, []);
+}
+
+// ---- Flera listor i samma fil: den första importeras, resten varnas om
+{
+  const twoLists = JSON.stringify({ lists: [
+    { name: 'Ett', categories: [{ name: 'A', items: [{ name: 'X', weight: 10, unit: 'g' }] }] },
+    { name: 'Två', categories: [{ name: 'B', items: [{ name: 'Y', weight: 20, unit: 'g' }] }] },
+  ] });
+  const { items, listName, warnings } = parseImport(twoLists, 'x.json');
+  check('flera listor: första importeras', [listName, items.length], ['Ett', 1]);
+  check('flera listor: varnar', /2 listor/.test(warnings[0] || ''), true);
+}
+
+// ---- Okända fältnamn ska ändå hamna rätt via FIELD_ALIASES
+{
+  const odd = JSON.stringify([
+    { item_name: 'Kokkärl', weight_grams: 180, qty: 1, Kategori: 'Kök' },
+    { title: 'Frystorkat', weight: 5.6, unit: 'oz', consumable: 1, price: 89 },
+  ]);
+  const { items } = parseImport(odd, 'x.json');
+  check('alias: namn', items.map(i => i.name), ['Kokkärl', 'Frystorkat']);
+  check('alias: weight_grams tolkas som gram', items[0].weight, 180);
+  check('alias: ounce räknas om', items[1].weight, 159);
+  check('alias: kategori med versal', items[0].categoryName, 'Kök');
+  check('alias: pris hamnar i noteringen', items[1].note, 'Pris: 89');
+}
+
+// ---- Filer vi inte kan läsa ska ge ett svenskt felmeddelande, inte krascha
+{
+  const failures = [];
+  for (const [label, text, name] of [
+    ['tom fil', '   ', 'x.csv'],
+    ['trasig json', '{ "items": ', 'x.json'],
+    ['csv utan namnkolumn', 'a,b\n1,2', 'x.csv'],
+    ['tom lista', '{"lists":[{"name":"X","categories":[{"name":"A","items":[]}]}]}', 'x.json'],
+  ]) {
+    try { parseImport(text, name); failures.push(`${label}: kastade inte`); }
+    catch (error) { if (!/[a-zåäö]/i.test(error.message)) failures.push(`${label}: tomt meddelande`); }
+  }
+  check('felmeddelanden', failures, []);
+}
+
+// ---- Radbrytning inuti ett citerat fält får inte dela raden
+{
+  check('csv: radbrytning i citat', parseCsv('a,b\n"rad\nbryt",2\n'), [['a', 'b'], ['rad\nbryt', '2']]);
+}
+
+const failed = results.filter((result) => !result.ok);
+const out = document.getElementById('out');
+out.className = failed.length ? 'fail' : 'ok';
+out.textContent = `${results.length - failed.length}/${results.length} OK\n\n`
+  + failed.map((result) => `FAIL ${result.label}\n  fick:      ${result.actual}\n  förväntat: ${result.expected}`).join('\n\n');
+window.__testResult = { total: results.length, failed };
+</script>
+</body>
+</html>

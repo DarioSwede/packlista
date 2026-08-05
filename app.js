@@ -1,3 +1,8 @@
+// The query string is bumped by hand alongside index.html's app.js?v=,
+// since a module import is fetched by the browser on its own and would
+// otherwise keep serving a cached copy after a deploy.
+import { parseImport, readImportFile, itemsToCsv, listToJson, exportFilename } from "./transfer.js?v=1";
+
 const cfg = window.PACKLISTA_CONFIG;
 const supabase = window.supabase.createClient(cfg.SUPABASE_URL, cfg.SUPABASE_ANON_KEY, {
   auth: {
@@ -1212,10 +1217,135 @@ function createPlanner(container, { session = null } = {}) {
     const next = availableLists.find((list) => list.id === nextId);
     if (next) await openList(next);
   });
+  // ---- export -------------------------------------------------------
+
+  function triggerDownload(filename, contents, mimeType) {
+    const url = URL.createObjectURL(new Blob([contents], { type: mimeType }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    // Safari ignores a click on a link that is not in the document.
+    document.body.append(link);
+    link.click();
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  const currentListName = () => $("[data-list-name]", root).value.trim() || "Min packlista";
+  const categoryNameOf = (id) => categories.find((category) => category.id === id)?.name || id;
+
+  $("[data-export-csv]", root).addEventListener("click", () => {
+    triggerDownload(
+      exportFilename(currentListName(), "csv"),
+      itemsToCsv(items, categoryNameOf),
+      "text/csv;charset=utf-8",
+    );
+    saveState.textContent = `Exporterade ${items.length} prylar till CSV ✓`;
+  });
+
+  $("[data-export-json]", root).addEventListener("click", () => {
+    const payload = listToJson({
+      name: currentListName(),
+      settings: { ...listSettings, tripDays, targetWeightKg },
+      categories,
+      items,
+    });
+    triggerDownload(
+      exportFilename(currentListName(), "json"),
+      JSON.stringify(payload, null, 2),
+      "application/json",
+    );
+    saveState.textContent = `Exporterade ${items.length} prylar till JSON ✓`;
+  });
+
+  // ---- import -------------------------------------------------------
+
+  // Imported rows name their category as free text. Match it against the
+  // categories that already exist (by name, then by id, both case
+  // insensitively) and create the rest, so an imported list keeps the
+  // structure it had in the other service instead of collapsing into
+  // Övrigt.
+  async function resolveImportedCategories(names) {
+    const byKey = new Map();
+    const created = [];
+    const keyOf = (value) => String(value || "").trim().toLocaleLowerCase("sv-SE");
+    for (const rawName of names) {
+      const key = keyOf(rawName);
+      if (!key || byKey.has(key)) continue;
+      const existing = categories.find((category) => keyOf(category.name) === key || keyOf(category.id) === key);
+      if (existing) { byKey.set(key, existing.id); continue; }
+      const category = {
+        id: `egen-${uid()}`,
+        name: String(rawName).trim().slice(0, 40),
+        icon: "📦",
+        color: "#2f934d",
+      };
+      created.push(category);
+      byKey.set(key, category.id);
+    }
+    if (created.length && persistent) {
+      const { error } = await supabase.from("user_categories").insert(created.map((category) => ({
+        user_id: session.user.id,
+        category_key: category.id,
+        name: category.name,
+        icon: category.icon,
+        color: category.color,
+      })));
+      if (error) throw error;
+    }
+    userCategories.push(...created);
+    categories.push(...created);
+    return { byKey, createdCount: created.length };
+  }
+
+  async function applyImportedItems(imported) {
+    const { byKey, createdCount } = await resolveImportedCategories(imported.items.map((item) => item.categoryName));
+    const keyOf = (value) => String(value || "").trim().toLocaleLowerCase("sv-SE");
+    items = imported.items.map((item) => ({
+      id: uid(),
+      name: item.name.slice(0, 120),
+      category: byKey.get(keyOf(item.categoryName)) || "ovrigt",
+      weight: item.weight,
+      quantity: item.quantity,
+      owned: !!item.owned,
+      consumable: !!item.consumable,
+      worn: !!item.worn,
+      favorite: !!item.favorite,
+      weighed: !!item.weighed,
+      note: item.note,
+    }));
+    const importedDays = Number(imported.settings?.tripDays);
+    if (importedDays > 0) {
+      tripDays = Math.min(60, Math.max(1, Math.round(importedDays)));
+      root.querySelectorAll("[data-trip-days]").forEach((input) => input.value = String(tripDays));
+    }
+    renderFilters();
+    render();
+    // save() has no guest/read-only guard of its own (scheduleSave() is
+    // where that lives), and import always runs on a list we just created.
+    if (persistent && canEditList) await save();
+    return createdCount;
+  }
+
   const newListModal = $("[data-new-list-modal]", root);
   const newListName = $("[data-new-list-name]", root);
   const newListDays = $("[data-new-list-days]", root);
   const newListMessage = $("[data-new-list-message]", root);
+  const newListFile = $("[data-new-list-file]", root);
+  const importField = $("[data-import-field]", root);
+  const importSourceInputs = [...root.querySelectorAll('[data-new-list-sources] input[name="new-list-source"]')];
+  const chosenSource = () => importSourceInputs.find((input) => input.checked)?.value || "blank";
+  const syncImportField = () => { importField.hidden = chosenSource() !== "import"; };
+  importSourceInputs.forEach((input) => input.addEventListener("change", syncImportField));
+  // Picking a file suggests its name for the list, but never overwrites a
+  // name the user has typed themselves -- only the auto-generated one.
+  newListFile.addEventListener("change", () => {
+    const file = newListFile.files?.[0];
+    if (!file || !/^Ny packlista( \d+)?$/.test(newListName.value.trim())) return;
+    const suggestion = file.name.replace(/\.[a-z0-9]+$/i, "").trim().slice(0, 80);
+    if (suggestion) newListName.value = suggestion;
+  });
+
   const closeNewListModal = () => {
     newListModal.hidden = true;
     newListMessage.textContent = "";
@@ -1234,6 +1364,9 @@ function createPlanner(container, { session = null } = {}) {
     newListName.value = newName;
     newListDays.value = String(tripDays);
     newListMessage.textContent = "";
+    importSourceInputs.forEach((input) => input.checked = input.value === "blank");
+    newListFile.value = "";
+    syncImportField();
     newListModal.hidden = false;
     newListName.focus();
     newListName.select();
@@ -1284,6 +1417,30 @@ function createPlanner(container, { session = null } = {}) {
       return;
     }
     const submitButton = event.currentTarget.querySelector('[type="submit"]');
+    const importing = chosenSource() === "import";
+    const file = newListFile.files?.[0];
+    if (importing && !file) {
+      newListMessage.textContent = "Välj en fil att importera.";
+      newListFile.focus();
+      return;
+    }
+
+    // Read and parse before creating anything, so an unreadable file
+    // leaves no empty list behind.
+    let imported = null;
+    if (importing) {
+      submitButton.disabled = true;
+      newListMessage.textContent = "Läser filen…";
+      try {
+        const { text, filename } = await readImportFile(file);
+        imported = parseImport(text, filename);
+      } catch (error) {
+        submitButton.disabled = false;
+        newListMessage.textContent = `Kunde inte läsa filen: ${error.message}`;
+        return;
+      }
+    }
+
     submitButton.disabled = true;
     newListMessage.textContent = "Skapar listan…";
     const created = await supabase.from("packing_lists")
@@ -1304,6 +1461,17 @@ function createPlanner(container, { session = null } = {}) {
     availableLists.push(created.data);
     closeNewListModal();
     await openList(created.data);
+    if (!imported) return;
+    try {
+      const createdCategories = await applyImportedItems(imported);
+      saveState.textContent = [
+        `Importerade ${items.length} prylar ✓`,
+        createdCategories ? `${createdCategories} nya kategorier` : "",
+        ...imported.warnings,
+      ].filter(Boolean).join(" · ");
+    } catch (error) {
+      saveState.textContent = `Listan skapades men importen misslyckades: ${error.message}`;
+    }
   });
 
   renderFilters();
