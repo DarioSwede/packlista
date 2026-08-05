@@ -155,6 +155,55 @@ Databasen är oförändrad — `packing_items.consumable` var alltid en
 vanlig boolean utan check-constraint, spärren låg bara i klienten.
 Ingen ny migration behövs.
 
+## Import och export av listor (2026-08-05)
+
+All filhantering ligger i `transfer.js`, en egen modul utan DOM- och
+Supabase-beroenden — `app.js` sköter bara kopplingen (kategorimatchning,
+sparande, nedladdning). Skälet är testbarhet: modulen går att ladda i en
+tom sida och köra fixturer mot, vilket är gjort för LighterPack-CSV,
+svensk semikolon-CSV, vårt eget JSON, Goulights ZIP och trasiga filer.
+
+**Export** ligger i vyn Utskrift & export, bredvid Skriv ut:
+
+- **CSV** med LighterPacks kolumner (`Item Name, Category, desc, qty,
+  weight, unit, url, price, worn, consumable`) — det är det format övriga
+  gear-sajter läser. Filen inleds med BOM så att Excel inte förstör å/ä/ö.
+- **JSON** med allt appen lagrar, inklusive Favorit och Vägd som CSV inte
+  har plats för. En JSON-export kan läsas tillbaka utan att något tappas.
+
+**Import** sker när en ny lista skapas (`Innehåll` → `Importera fil`).
+Filen läses och tolkas *innan* listan skapas, så en oläsbar fil inte
+lämnar en tom lista efter sig. Format identifieras på innehållet, inte på
+filändelsen:
+
+- **CSV** med rubrikrad. Avgränsare (`,`, `;`, tabb) gissas från
+  rubrikraden, decimalkomma hanteras, och enheten läses från en
+  `unit`-kolumn, från rubriken (`Vikt (g)`) eller från värdet självt
+  (`259,97 g`). Allt räknas om till hela gram.
+- **JSON** — vårt eget format, en naken array av prylar, eller den
+  nästlade formen `lists[].categories[].items[]` som Goulight använder.
+- **ZIP** packas upp i webbläsaren (`readZipJson()`) och den största
+  JSON-filen inuti används. Stöder ZIP64, vilket behövdes: Goulights
+  export sätter alla storleksfält till `0xffffffff` och lägger de riktiga
+  värdena i extrafält `0x0001` trots att filen är några hundra byte.
+
+Fältnamn matchas genom `FIELD_ALIASES`, som körs både på CSV-rubriker och
+på JSON-nycklar. Nycklar normaliseras (gemener, å/ä/ö viks till a/a/o,
+skiljetecken bort), så `Item Name`, `item_name`, `Artikel`, `Bärs` och
+`weight_grams` hamnar rätt utan specialfall per tjänst. Det är därför det
+bara finns *ett* importalternativ i dialogen istället för ett per
+tjänst — formatet känns igen automatiskt.
+
+Kategorier i importerade filer är fri text. De matchas mot befintliga
+kategorier på namn (skiftlägesokänsligt) och de som saknas skapas som
+egna kategorier i `user_categories`, så en importerad lista behåller sin
+struktur istället för att kollapsa till Övrigt.
+
+Kvar att verifiera: Goulight-exporten vi testat mot hade en tom lista, så
+containern är bekräftad men inte fältnamnen inuti en pryl. Packwizards
+format är inte sett alls. Båda bör falla ut rätt via `FIELD_ALIASES`,
+men det är inte bevisat.
+
 ## Delningslistan visade bara vissa konton (2026-08-05)
 
 **Kör `supabase/migrations/0028_profile_on_signup.sql` i Supabase

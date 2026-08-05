@@ -19,7 +19,7 @@
       if (storedPrefs.theme === "light") document.documentElement.classList.add("theme-light");
     } catch (e) { /* ignore malformed/blocked storage */ }
   </script>
-  <link rel="stylesheet" href="styles.css?v=55">
+  <link rel="stylesheet" href="styles.css?v=56">
 </head>
 <body>
   <div id="signed-out">
@@ -234,7 +234,7 @@
         <nav class="planner-nav" aria-label="Packlistans vyer">
           <button class="active" data-view-button="packing"><img class="nav-icon" src="assets/backpack-check.svg" alt="">Packlista</button>
           <button data-view-button="shopping">Inköp <span data-shopping-badge>0</span></button>
-          <button data-view-button="print">A4-utskrift</button>
+          <button data-view-button="print">Utskrift &amp; export</button>
         </nav>
         <aside class="insights-grid sidebar-insights" data-view="packing" aria-label="Viktanalys och kategorifilter">
           <section class="insight-card forecast-card">
@@ -341,10 +341,14 @@
           <div class="view-heading no-print">
             <div>
               <p class="eyebrow">Förbered turen</p>
-              <h2>A4-utskrift</h2>
-              <p>En ren översikt som är anpassad för en eller flera A4-sidor.</p>
+              <h2>Utskrift och export</h2>
+              <p>En ren översikt anpassad för A4 — eller ta med listan till en annan tjänst.</p>
             </div>
-            <button class="primary-button" data-print>🖨 Skriv ut</button>
+            <div class="heading-actions">
+              <button class="quiet-button" data-export-csv type="button" title="CSV med samma kolumner som LighterPack använder. Öppnas även i Excel.">Exportera CSV</button>
+              <button class="quiet-button" data-export-json type="button" title="Fullständig kopia av listan, inklusive Förbrukas, Bärs, Favorit och Vägd. Kan läsas tillbaka här.">Exportera JSON</button>
+              <button class="primary-button" data-print>🖨 Skriv ut</button>
+            </div>
           </div>
           <article class="print-sheet">
             <header>
@@ -375,6 +379,22 @@
             <input id="new-list-name" data-new-list-name required maxlength="80" autocomplete="off">
             <label for="new-list-days">Antal dagar</label>
             <input id="new-list-days" data-new-list-days type="number" min="1" max="60" value="6" required>
+            <fieldset class="source-picker" data-new-list-sources>
+              <legend>Innehåll</legend>
+              <label class="source-card">
+                <input type="radio" name="new-list-source" value="blank" checked>
+                <span><strong>Tom lista</strong><small>Börja från början.</small></span>
+              </label>
+              <label class="source-card">
+                <input type="radio" name="new-list-source" value="import">
+                <span><strong>Importera fil</strong><small>LighterPack, Goulight, Packwizard eller ett kalkylblad.</small></span>
+              </label>
+            </fieldset>
+            <div class="import-field" data-import-field hidden>
+              <label for="new-list-file">Fil att importera</label>
+              <input id="new-list-file" data-new-list-file type="file" accept=".csv,.json,.zip,.tsv,text/csv,application/json,application/zip">
+              <small>CSV, JSON eller en ZIP med exporterad data. Kategorier som saknas skapas automatiskt.</small>
+            </div>
             <p class="form-message" data-new-list-message aria-live="polite"></p>
             <div class="new-list-actions">
               <button class="secondary-button" type="button" data-new-list-cancel>Avbryt</button>
@@ -422,6 +442,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.110.7/dist/umd/supabase.min.js"></script>
   <script src="config.js?v=3"></script>
-  <script type="module" src="app.js?v=42"></script>
+  <script type="module" src="app.js?v=43"></script>
 </body>
 </html>
