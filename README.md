@@ -199,10 +199,21 @@ kategorier på namn (skiftlägesokänsligt) och de som saknas skapas som
 egna kategorier i `user_categories`, så en importerad lista behåller sin
 struktur istället för att kollapsa till Övrigt.
 
-Kvar att verifiera: Goulight-exporten vi testat mot hade en tom lista, så
-containern är bekräftad men inte fältnamnen inuti en pryl. Packwizards
-format är inte sett alls. Båda bör falla ut rätt via `FIELD_ALIASES`,
-men det är inte bevisat.
+Testfallen ligger i `transfer.test.html` — öppna den över http (t.ex.
+`python3 -m http.server` i repo-roten) så körs de direkt i webbläsaren.
+Ingen testlöpare och inga beroenden, vilket är hela poängen med att
+`transfer.js` inte rör DOM eller Supabase.
+
+Fixturerna speglar riktiga exportfiler men innehåller påhittade
+uppgifter. Goulight-arkivet i testfilen är handbyggt för att matcha hur
+deras export faktiskt ser ut, ZIP64 och allt — ett arkiv som `zipfile`
+skriver på vanligt vis hade inte träffat den kodvägen.
+
+Två fält i Goulights export läses medvetet inte in: `image_url` (appen
+har ingen bildhantering) och `consumable_weight` (deras sätt att säga att
+bara en del av vikten förbrukas — här är en pryl antingen förbrukningsvara
+eller inte). Packwizards format är fortfarande osett, men bör falla ut
+rätt via `FIELD_ALIASES`.
 
 ## Delningslistan visade bara vissa konton (2026-08-05)
 
