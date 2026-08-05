@@ -155,6 +155,53 @@ Databasen är oförändrad — `packing_items.consumable` var alltid en
 vanlig boolean utan check-constraint, spärren låg bara i klienten.
 Ingen ny migration behövs.
 
+## Stapel eller cirkeldiagram (2026-08-05)
+
+"Vikt per kategori" går att växla mellan stapeldiagrammet som fanns
+tidigare och ett munkdiagram i LighterPacks stil. Valet är en
+visningsinställning som ligger i samma `prefs` i localStorage som
+enhet/radtäthet/tema, och slår igenom i alla monterade planerare via
+`refreshAllPlanners()`.
+
+Ringen ritas som **streckade cirkelbågar**, inte SVG-paths: en `<circle>`
+per kategori där `stroke-dasharray` sätter längden och `stroke-dashoffset`
+roterar den på plats. Skälet är att en path-baserad båge som sveper exakt
+360° kollapsar till ingenting — vilket är precis vad som händer när all
+vikt ligger i en enda kategori, ett fullt realistiskt läge i en halvfärdig
+packlista. Dasharray-varianten ritar då en hel ring.
+
+Munkdiagrammet visar bara kategorier med vikt > 0; stapeldiagrammet
+fortsätter lista de tomma, eftersom det är där man ser vad som återstår
+att fylla i. Klick filtrerar listan i båda vyerna. Ringsegmenten är bara
+till för musen — teckenförklaringen under är riktiga `<button>`-element
+och bär tangentbords- och skärmläsarvägen.
+
+## Tipsa om fel och förslag (2026-08-05)
+
+**Kräver `supabase/migrations/0029_feedback.sql`.**
+
+Tipsa-knappen ligger i toppen i båda vyerna, både utloggad och inloggad.
+Utloggade besökare får skicka in — det är där en förstagångsbesökare är
+mest sannolik att gå på något trasigt. Varje inskick får med `page_url`
+och `user_agent`, de två uppgifter som alltid saknas i en felrapport som
+skrivs i efterhand.
+
+Läsvägen är avsiktligt asymmetrisk: `anon` och `authenticated` har
+**bara** `insert` på `public.feedback`, och det finns ingen select-policy
+alls. Ingen kan alltså läsa tillbaka tabellen via PostgREST — inte ens
+sina egna rader. Adminvyn går istället via `admin_list_feedback()` och
+`admin_set_feedback_status()`, båda `security definer` med
+admin-kontroll. Insert-policyn tillåter bara `user_id = auth.uid()` eller
+null, så ingen kan tillskriva någon annan ett tips.
+
+Skräppostskyddet är tunt med flit: längdkontroller i kolumnerna och inget
+mer. Blir det ett problem är nästa steg en hastighetsgräns, inte en
+inloggningsspärr.
+
+Verifierat mot den publika anon-nyckeln: insert ger 201, select ger 401
+`permission denied`, insert med någon annans `user_id` ger 401 RLS-fel
+och ogiltig `kind` ger 400 check-constraint.
+
 ## Import och export av listor (2026-08-05)
 
 All filhantering ligger i `transfer.js`, en egen modul utan DOM- och

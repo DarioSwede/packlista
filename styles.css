@@ -191,6 +191,49 @@ button{cursor:pointer}
 .category-bar:hover,.category-bar.active{border-color:var(--line);background:var(--hover)}.category-bar span{overflow:hidden;text-overflow:ellipsis;font-size:12px}
 .category-bar i{height:7px;border-radius:99px;background:var(--track);overflow:hidden}.category-bar b{display:block;height:100%;border-radius:inherit;background:var(--green)}
 .category-bar strong{text-align:right;font-size:12px}.empty-insight{padding:45px 12px;color:var(--muted);font-size:12px;text-align:center}
+/* ---- Stapel/Cirkel-växling (2026-08-05). Segmenterad kontroll i samma
+   stil som .clear-filter, och ett munkdiagram byggt av streckade
+   cirkelbågar -- se donutChart() i app.js för varför det inte är
+   path-baserat. */
+.chart-toggle{display:flex;gap:4px;margin:0 0 10px}
+.chart-toggle button{flex:1;border:1px solid var(--line);border-radius:7px;background:transparent;color:var(--muted);padding:5px 8px;font-size:11px}
+.chart-toggle button:hover{border-color:var(--green);color:var(--green)}
+.chart-toggle button.active{border-color:var(--green);background:var(--accent-soft);color:var(--green)}
+.chart-toggle button:focus-visible{outline:2px solid var(--green);outline-offset:1px}
+.donut-wrap{display:grid;place-items:center;padding:2px 0 10px}
+.donut{width:min(190px,100%);height:auto;transform:rotate(-90deg)}
+.donut-segment{cursor:pointer;transition:opacity .12s ease,stroke-width .12s ease}
+.donut-segment:hover{stroke-width:38}
+.donut-segment.dimmed{opacity:.28}
+/* Counter-rotates the ring's -90° so the centred total reads upright. */
+.donut-total{transform:rotate(90deg);transform-origin:center;fill:var(--text);font-family:Georgia,serif;font-size:22px}
+.donut-legend{display:grid;gap:3px}
+.legend-row{display:grid;grid-template-columns:10px minmax(0,1fr) 38px 64px;align-items:center;gap:8px;width:100%;border:1px solid transparent;border-radius:7px;background:transparent;color:var(--text);padding:5px;text-align:left}
+.legend-row:hover,.legend-row.active{border-color:var(--line);background:var(--hover)}
+.legend-row i{width:10px;height:10px;border-radius:3px}
+.legend-row span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
+.legend-row small{color:var(--muted);font-size:11px;text-align:right}
+.legend-row strong{text-align:right;font-size:12px}
+/* ---- Tipsa-knapp och inkorg (2026-08-05) */
+.feedback-button{display:inline-flex;align-items:center;gap:7px}
+#feedback-form{display:grid;gap:8px}
+#feedback-form label{color:var(--muted);font-size:12px}
+/* Deliberately not "#feedback-form input" -- that would outrank
+   .source-card input's visually-hidden radio and turn the two choice
+   cards into full-width boxes. */
+#feedback-form textarea,#feedback-form input[type=email]{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--well);color:var(--text);padding:11px;font:inherit;font-size:13px}
+#feedback-form textarea{resize:vertical;min-height:96px}
+.feedback-inbox{display:grid;gap:8px;margin-top:6px}
+.feedback-entry{display:grid;gap:6px;border:1px solid var(--line);border-radius:10px;padding:11px 12px}
+.feedback-entry.handled{opacity:.55}
+.feedback-entry>div{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.feedback-entry>div span{color:var(--muted);font-size:11px}
+.feedback-entry p{margin:0;white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.5}
+.feedback-entry small{color:var(--muted);font-size:10px;word-break:break-all}
+.feedback-entry .quiet-button{justify-self:start;padding:5px 9px;font-size:11px}
+.feedback-kind{border-radius:99px;padding:2px 9px;font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+.feedback-kind.bug{background:rgba(239,107,107,.16);color:#ef6b6b}
+.feedback-kind.idea{background:var(--accent-soft);color:var(--green)}
 .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
 table{width:100%;min-width:900px;border-collapse:collapse}
 th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:left;font-size:13px}
